@@ -3,23 +3,23 @@ import { Plus, Edit, Trash2, X, Save } from 'lucide-react';
 import { apiClient } from '../../api/axios';
 import { Link } from 'react-router-dom';
 
-interface AdminCourse {
+interface TeacherCourse {
     id: number;
     title: string;
     description: string;
-    price: number;
+    accessType: 'OPEN' | 'CLOSED';
     isPublished: boolean;
 }
 
-export const AdminCoursesPage = () => {
-    const [courses, setCourses] = useState<AdminCourse[]>([]);
+export const TeacherCoursesPage = () => {
+    const [courses, setCourses] = useState<TeacherCourse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     // Состояния для модального окна создания курса
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newDescription, setNewDescription] = useState('');
-    const [newPrice, setNewPrice] = useState(0);
+    const [newAccessType, setNewAccessType] = useState<'OPEN' | 'CLOSED'>('OPEN');
     const [newIsPublished, setNewIsPublished] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
@@ -30,7 +30,7 @@ export const AdminCoursesPage = () => {
 
     const fetchCourses = async () => {
         try {
-            const response = await apiClient.get('/admin/courses');
+            const response = await apiClient.get('/teacher/courses');
             setCourses(response.data);
         } catch (error) {
             console.error('Ошибка загрузки', error);
@@ -46,10 +46,10 @@ export const AdminCoursesPage = () => {
         setError('');
 
         try {
-            const response = await apiClient.post('/admin/courses', {
+            const response = await apiClient.post('/teacher/courses', {
                 title: newTitle,
                 description: newDescription,
-                price: newPrice,
+                accessType: newAccessType,
                 isPublished: newIsPublished
             });
 
@@ -60,7 +60,7 @@ export const AdminCoursesPage = () => {
             setIsModalOpen(false);
             setNewTitle('');
             setNewDescription('');
-            setNewPrice(0);
+            setNewAccessType('OPEN');
             setNewIsPublished(false);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Ошибка при создании курса');
@@ -74,7 +74,7 @@ export const AdminCoursesPage = () => {
         if (!window.confirm('Вы уверены, что хотите удалить этот курс? Это действие необратимо!')) return;
 
         try {
-            await apiClient.delete(`/admin/courses/${id}`);
+            await apiClient.delete(`/teacher/courses/${id}`);
             setCourses(courses.filter(c => c.id !== id));
         } catch (error) {
             alert('Не удалось удалить курс');
@@ -107,7 +107,7 @@ export const AdminCoursesPage = () => {
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm">
                         <th className="py-4 px-6 font-medium">ID</th>
                         <th className="py-4 px-6 font-medium">Название</th>
-                        <th className="py-4 px-6 font-medium">Цена</th>
+                        <th className="py-4 px-6 font-medium">Тип доступа</th>
                         <th className="py-4 px-6 font-medium">Статус</th>
                         <th className="py-4 px-6 font-medium text-right">Действия</th>
                     </tr>
@@ -122,7 +122,9 @@ export const AdminCoursesPage = () => {
                             <tr key={course.id} className="hover:bg-slate-50 transition-colors">
                                 <td className="py-4 px-6 text-slate-500">#{course.id}</td>
                                 <td className="py-4 px-6 font-medium text-slate-800">{course.title}</td>
-                                <td className="py-4 px-6 text-emerald-600 font-medium">{course.price > 0 ? `${course.price} XP` : 'Бесплатно'}</td>
+                                <td className="py-4 px-6 text-slate-700 font-medium">
+                                    {course.accessType === 'OPEN' ? 'Открытый' : 'По заявкам'}
+                                </td>
                                 <td className="py-4 px-6">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                                             course.isPublished ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
@@ -132,9 +134,8 @@ export const AdminCoursesPage = () => {
                                 </td>
                                 <td className="py-4 px-6 text-right">
                                     <div className="flex justify-end gap-2">
-                                        {}
                                         <Link
-                                            to={`/admin/courses/${course.id}`}
+                                            to={`/teacher/courses/${course.id}`}
                                             className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
                                             title="Редактировать контент"
                                         >
@@ -187,12 +188,15 @@ export const AdminCoursesPage = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Стоимость (во внутренней валюте)</label>
-                                    <input
-                                        type="number" min="0" required value={newPrice} onChange={e => setNewPrice(Number(e.target.value))}
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    />
-                                    <p className="text-xs text-slate-500 mt-1">Оставьте 0, чтобы курс был бесплатным</p>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Тип доступа</label>
+                                    <select
+                                        value={newAccessType}
+                                        onChange={e => setNewAccessType(e.target.value as 'OPEN' | 'CLOSED')}
+                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                    >
+                                        <option value="OPEN">Открытый (свободная запись)</option>
+                                        <option value="CLOSED">Закрытый (по заявкам)</option>
+                                    </select>
                                 </div>
 
                                 <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">

@@ -1,4 +1,4 @@
-package com.mpanyavin.algoschool.module_assessment.entity;
+package com.algoschool.module_assessment.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

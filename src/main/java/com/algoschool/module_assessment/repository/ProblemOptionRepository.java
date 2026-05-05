@@ -1,6 +1,6 @@
-package com.mpanyavin.algoschool.module_assessment.repository;
+package com.algoschool.module_assessment.repository;
 
-import com.mpanyavin.algoschool.module_assessment.entity.ProblemOption;
+import com.algoschool.module_assessment.entity.ProblemOption;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

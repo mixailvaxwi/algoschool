@@ -1,7 +1,7 @@
-package com.mpanyavin.algoschool.security;
+package com.algoschool.security;
 
-import com.mpanyavin.algoschool.module_user.entity.User;
-import com.mpanyavin.algoschool.module_user.repository.UserRepository;
+import com.algoschool.module_user.entity.User;
+import com.algoschool.module_user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

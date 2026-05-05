@@ -1,4 +1,4 @@
-package com.mpanyavin.algoschool.config;
+package com.algoschool.config;
 
 public class ApplicationConfig {
 }

@@ -1,8 +1,8 @@
-package com.mpanyavin.algoschool.module_user.controller;
+package com.algoschool.module_user.controller;
 
-import com.mpanyavin.algoschool.module_user.dto.UserProfileResponse;
-import com.mpanyavin.algoschool.module_user.service.UserService;
-import com.mpanyavin.algoschool.security.UserDetailsImpl;
+import com.algoschool.module_user.dto.UserProfileResponse;
+import com.algoschool.module_user.service.UserService;
+import com.algoschool.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

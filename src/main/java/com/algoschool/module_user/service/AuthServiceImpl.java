@@ -1,13 +1,13 @@
-package com.mpanyavin.algoschool.module_user.service;
+package com.algoschool.module_user.service;
 
-import com.mpanyavin.algoschool.module_user.dto.JwtResponse;
-import com.mpanyavin.algoschool.module_user.dto.LoginRequest;
-import com.mpanyavin.algoschool.module_user.dto.RegisterRequest;
-import com.mpanyavin.algoschool.module_user.entity.Role;
-import com.mpanyavin.algoschool.module_user.entity.User;
-import com.mpanyavin.algoschool.module_user.repository.UserRepository;
-import com.mpanyavin.algoschool.security.JwtTokenProvider;
-import com.mpanyavin.algoschool.security.UserDetailsImpl;
+import com.algoschool.module_user.dto.JwtResponse;
+import com.algoschool.module_user.dto.LoginRequest;
+import com.algoschool.module_user.dto.RegisterRequest;
+import com.algoschool.module_user.entity.Role;
+import com.algoschool.module_user.entity.User;
+import com.algoschool.module_user.repository.UserRepository;
+import com.algoschool.security.JwtTokenProvider;
+import com.algoschool.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,23 +31,32 @@ public class AuthServiceImpl implements AuthService {
     public void registerUser(RegisterRequest request) {
         // 1. Проверяем, не занят ли username или email
         if (userRepository.existsByUsername(request.username())) {
-            throw new RuntimeException("Ошибка: Имя пользователя уже занято!"); // Позже заменим на кастомный Exception
-        }
-        if (userRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("Ошибка: Email уже используется!");
+            throw new RuntimeException("Этот логин уже занят");
         }
 
-        // 2. Создаем нового пользователя
-        User user = User.builder()
-                .username(request.username())
-                .email(request.email())
-                .passwordHash(passwordEncoder.encode(request.password())) // Хешируем пароль!
-                .role(Role.ROLE_STUDENT) // По умолчанию все новые пользователи — студенты
-                .balance(0) // Стартовый баланс внутренней валюты
-                .totalXp(0) // Стартовый опыт
-                .build();
+        User user = new User();
+        user.setName(request.name());
+        user.setUsername(request.username());
+        user.setEmail(request.email());
 
-        // 3. Сохраняем в БД
+        // ЛОГИКА ВЫБОРА РОЛИ
+        if ("TEACHER".equalsIgnoreCase(request.role())) {
+            user.setRole(Role.ROLE_TEACHER);
+        } else {
+            user.setRole(Role.ROLE_STUDENT);
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+
+        // 3. ЛОГИКА ВЫБОРА РОЛИ
+        // Проверяем поле role, которое пришло из JSON с фронтенда
+        if ("TEACHER".equalsIgnoreCase(request.role())) {
+            user.setRole(Role.ROLE_TEACHER);
+        } else {
+            // По умолчанию всегда студент, даже если с фронта пришел мусор
+            user.setRole(Role.ROLE_STUDENT);
+        }
+
+        // 4. Сохраняем в базу через репозиторий
         userRepository.save(user);
     }
 
@@ -76,8 +85,7 @@ public class AuthServiceImpl implements AuthService {
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getRole().name(),
-                user.getBalance()
+                user.getRole().name()
         );
     }
 }

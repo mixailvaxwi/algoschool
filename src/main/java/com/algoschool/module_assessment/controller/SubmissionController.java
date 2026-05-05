@@ -1,35 +1,38 @@
-package com.mpanyavin.algoschool.module_assessment.controller;
+package com.algoschool.module_assessment.controller;
 
-import com.mpanyavin.algoschool.module_assessment.dto.SubmissionRequest;
-import com.mpanyavin.algoschool.module_assessment.dto.SubmissionResponse;
-import com.mpanyavin.algoschool.module_assessment.service.AssessmentService;
-import com.mpanyavin.algoschool.security.UserDetailsImpl;
+import com.algoschool.module_assessment.dto.AssessmentResult;
+import com.algoschool.module_assessment.dto.SubmissionRequest;
+import com.algoschool.module_assessment.service.AssessmentService;
+import com.algoschool.security.UserDetailsImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/submissions")
+@RequestMapping("/api/courses/{courseId}/lessons/{lessonId}/steps/{stepId}/submit")
 @RequiredArgsConstructor
 public class SubmissionController {
 
     private final AssessmentService assessmentService;
 
-    // Метод: POST /api/submissions
-    // Требует наличие заголовка Authorization: Bearer <token>
     @PostMapping
-    public ResponseEntity<SubmissionResponse> submitSolution(
-            @AuthenticationPrincipal UserDetailsImpl userDetails,
-            @Valid @RequestBody SubmissionRequest request
+    public ResponseEntity<AssessmentResult> submit(
+            @PathVariable Long courseId,
+            @PathVariable Long lessonId,
+            @PathVariable Long stepId,
+            @Valid @RequestBody SubmissionRequest request,
+            @AuthenticationPrincipal UserDetailsImpl currentUser
     ) {
-        // Передаем ID пользователя из токена и само решение в сервисный слой
-        SubmissionResponse response = assessmentService.submitSolution(userDetails.getId(), request);
+        Long currentUserId = currentUser.getId();
 
-        return ResponseEntity.ok(response);
+        AssessmentResult result = assessmentService.submitSolution(
+                currentUserId,
+                stepId,
+                request.answer()
+        );
+
+        return ResponseEntity.ok(result);
     }
 }

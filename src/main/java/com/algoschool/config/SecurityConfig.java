@@ -1,10 +1,11 @@
-package com.mpanyavin.algoschool.config;
+package com.algoschool.config;
 
-import com.mpanyavin.algoschool.security.JwtTokenFilter;
-import com.mpanyavin.algoschool.security.UserDetailsServiceImpl;
+import com.algoschool.security.JwtTokenFilter;
+import com.algoschool.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -62,8 +63,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Отключаем сессии
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Открываем регистрацию и логин для всех
-                        .requestMatchers("/api/courses").permitAll() // Каталог курсов доступен без авторизации
-                        .anyRequest().authenticated() // Все остальные эндпоинты требуют валидного токена
+                        .requestMatchers(HttpMethod.GET, "/api/courses").permitAll() // Открываем каталог для всех
+                        .anyRequest().authenticated() // Всё остальное (включая покупку /purchase) требует токен
                 );
 
         // Указываем наш провайдер
@@ -80,7 +81,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Укажите здесь порт вашего будущего TypeScript фронтенда (обычно 3000, 4200 или 5173)
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
         configuration.setAllowCredentials(true);

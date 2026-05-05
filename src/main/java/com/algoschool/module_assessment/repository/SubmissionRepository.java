@@ -1,7 +1,7 @@
-package com.mpanyavin.algoschool.module_assessment.repository;
+package com.algoschool.module_assessment.repository;
 
-import com.mpanyavin.algoschool.module_assessment.entity.Submission;
-import com.mpanyavin.algoschool.module_assessment.entity.SubmissionStatus;
+import com.algoschool.module_assessment.entity.Submission;
+import com.algoschool.module_assessment.entity.SubmissionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,9 +1,9 @@
-package com.mpanyavin.algoschool.module_user.controller;
+package com.algoschool.module_user.controller;
 
-import com.mpanyavin.algoschool.module_user.dto.JwtResponse;
-import com.mpanyavin.algoschool.module_user.dto.LoginRequest;
-import com.mpanyavin.algoschool.module_user.dto.RegisterRequest;
-import com.mpanyavin.algoschool.module_user.service.AuthService;
+import com.algoschool.module_user.dto.JwtResponse;
+import com.algoschool.module_user.dto.LoginRequest;
+import com.algoschool.module_user.dto.RegisterRequest;
+import com.algoschool.module_user.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

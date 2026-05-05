@@ -1,4 +1,4 @@
-package com.mpanyavin.algoschool.module_user.dto;
+package com.algoschool.module_user.dto;
 
 public record AuthResponse() {
 }

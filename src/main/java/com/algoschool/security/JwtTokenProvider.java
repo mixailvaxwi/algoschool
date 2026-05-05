@@ -1,4 +1,4 @@
-package com.mpanyavin.algoschool.security;
+package com.algoschool.security;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;

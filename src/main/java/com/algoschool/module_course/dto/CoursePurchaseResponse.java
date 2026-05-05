@@ -1,4 +1,4 @@
-package com.mpanyavin.algoschool.module_course.dto;
+package com.algoschool.module_course.dto;
 
 public record CoursePurchaseResponse(
         boolean success,

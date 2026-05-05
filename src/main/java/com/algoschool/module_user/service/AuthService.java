@@ -1,8 +1,8 @@
-package com.mpanyavin.algoschool.module_user.service;
+package com.algoschool.module_user.service;
 
-import com.mpanyavin.algoschool.module_user.dto.JwtResponse;
-import com.mpanyavin.algoschool.module_user.dto.LoginRequest;
-import com.mpanyavin.algoschool.module_user.dto.RegisterRequest;
+import com.algoschool.module_user.dto.JwtResponse;
+import com.algoschool.module_user.dto.LoginRequest;
+import com.algoschool.module_user.dto.RegisterRequest;
 
 public interface AuthService {
     void registerUser(RegisterRequest request);

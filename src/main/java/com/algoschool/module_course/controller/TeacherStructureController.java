@@ -1,7 +1,7 @@
 package com.algoschool.module_course.controller;
 
-import com.algoschool.module_course.dto.AdminLessonRequest;
-import com.algoschool.module_course.dto.AdminModuleRequest;
+import com.algoschool.module_course.dto.TeacherLessonRequest;
+import com.algoschool.module_course.dto.TeacherModuleRequest;
 import com.algoschool.module_course.dto.CourseStructureResponse;
 import com.algoschool.module_course.entity.Lesson;
 import com.algoschool.module_course.entity.Module;
@@ -10,28 +10,31 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/teacher")
 @RequiredArgsConstructor
-public class AdminStructureController {
+public class TeacherStructureController {
 
     private final CourseStructureService structureService;
 
-    // Получить всё дерево модулей и уроков курса
-    @GetMapping("/courses/{courseId}/structure")
-    public ResponseEntity<List<CourseStructureResponse>> getStructure(@PathVariable Long courseId) {
-        return ResponseEntity.ok(structureService.getCourseStructure(courseId));
+    @Transactional(readOnly = true)
+    @GetMapping("/courses/{courseId:\\d+}/structure")
+    public ResponseEntity<List<CourseStructureResponse>> getCourseStructure(@PathVariable Long courseId) {
+        // Используем тот же сервис, который мы уже починили ранее!
+        List<CourseStructureResponse> structure = structureService.getCourseStructure(courseId);
+        return ResponseEntity.ok(structure);
     }
 
     // Создать модуль внутри курса
-    @PostMapping("/courses/{courseId}/modules")
+    @PostMapping("/courses/{courseId:\\d+}/modules")
     public ResponseEntity<Module> addModule(
             @PathVariable Long courseId,
-            @Valid @RequestBody AdminModuleRequest request
+            @Valid @RequestBody TeacherModuleRequest request
     ) {
         Module created = structureService.addModule(courseId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -41,7 +44,7 @@ public class AdminStructureController {
     @PostMapping("/modules/{moduleId}/lessons")
     public ResponseEntity<Lesson> addLesson(
             @PathVariable Long moduleId,
-            @Valid @RequestBody AdminLessonRequest request
+            @Valid @RequestBody TeacherLessonRequest request
     ) {
         Lesson created = structureService.addLesson(moduleId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);

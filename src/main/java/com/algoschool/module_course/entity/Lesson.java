@@ -1,7 +1,12 @@
-package com.mpanyavin.algoschool.module_course.entity;
+package com.algoschool.module_course.entity;
 
+import com.algoschool.module_assessment.entity.Step;
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "lessons")
@@ -24,9 +29,9 @@ public class Lesson {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id", nullable = false)
+    @JsonIgnore
     private Module module;
 
-    // В будущем здесь появится:
-    // @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL)
-    // private List<Step> steps = new ArrayList<>();
+    @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL)
+    private List<Step> steps = new ArrayList<>();
 }

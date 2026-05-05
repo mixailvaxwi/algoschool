@@ -1,4 +1,4 @@
-package com.mpanyavin.algoschool.module_assessment.entity;
+package com.algoschool.module_assessment.entity;
 
 public enum SubmissionStatus {
     PENDING,                // В очереди на проверку (важно для асинхронной проверки кода)

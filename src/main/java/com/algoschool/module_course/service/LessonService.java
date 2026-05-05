@@ -1,4 +1,9 @@
 package com.algoschool.module_course.service;
 
-public class LessonService {
+import com.algoschool.module_course.dto.LessonPlayerResponse;
+import com.algoschool.security.UserDetailsImpl;
+
+public interface LessonService {
+    LessonPlayerResponse getFullLesson(Long lessonId, UserDetailsImpl currentUser);
+
 }

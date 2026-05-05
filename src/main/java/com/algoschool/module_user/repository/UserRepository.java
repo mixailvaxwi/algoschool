@@ -1,6 +1,6 @@
-package com.mpanyavin.algoschool.module_user.repository;
+package com.algoschool.module_user.repository;
 
-import com.mpanyavin.algoschool.module_user.entity.User;
+import com.algoschool.module_user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

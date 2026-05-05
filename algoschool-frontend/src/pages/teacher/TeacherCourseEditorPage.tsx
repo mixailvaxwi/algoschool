@@ -17,7 +17,7 @@ interface Module {
     lessons: Lesson[];
 }
 
-export const AdminCourseEditorPage = () => {
+export const TeacherCourseEditorPage = () => {
     const { courseId } = useParams<{ courseId: string }>();
     const navigate = useNavigate();
 
@@ -37,7 +37,7 @@ export const AdminCourseEditorPage = () => {
     // Функция загрузки реальной структуры с бэкенда
     const fetchStructure = async () => {
         try {
-            const response = await apiClient.get(`/admin/courses/${courseId}/structure`);
+            const response = await apiClient.get(`/teacher/courses/${courseId}/structure`);
 
             // Сортируем модули и уроки по их orderIndex для правильного отображения
             const sortedModules = response.data.map((m: Module) => ({
@@ -81,12 +81,12 @@ export const AdminCourseEditorPage = () => {
 
         try {
             if (modalType === 'MODULE') {
-                await apiClient.post(`/admin/courses/${courseId}/modules`, {
+                await apiClient.post(`/teacher/courses/${courseId}/modules`, {
                     title: newItemTitle,
                     orderIndex: newItemOrder
                 });
             } else if (modalType === 'LESSON' && activeModuleId) {
-                await apiClient.post(`/admin/modules/${activeModuleId}/lessons`, {
+                await apiClient.post(`/teacher/modules/${activeModuleId}/lessons`, {
                     title: newItemTitle,
                     orderIndex: newItemOrder
                 });
@@ -107,7 +107,7 @@ export const AdminCourseEditorPage = () => {
         <div className="max-w-5xl mx-auto relative">
             <div className="flex items-center gap-4 mb-8 border-b border-slate-200 pb-6">
                 <button
-                    onClick={() => navigate('/admin/courses')}
+                    onClick={() => navigate('/teacher/courses')}
                     className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors"
                     title="Назад к списку курсов"
                 >
@@ -162,7 +162,7 @@ export const AdminCourseEditorPage = () => {
                                                 </div>
                                                 <button
                                                     className="opacity-0 group-hover:opacity-100 text-xs bg-white border border-slate-200 px-3 py-1 rounded text-slate-600 hover:text-blue-600 transition-all shadow-sm"
-                                                    onClick={() => navigate(`/admin/lessons/${lesson.id}`)}
+                                                    onClick={() => navigate(`/teacher/lessons/${lesson.id}`)}
                                                 >
                                                     Редактировать шаги
                                                 </button>

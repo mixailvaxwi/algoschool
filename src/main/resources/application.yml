@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: algoschool
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/algoschool
+    username: admin
+    password: admin # Замените на ваш пароль от локальной БД
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # Для старта разработки 'update' автоматически создаст таблицы по вашим Entity-классам.
+      # Позже для продакшена мы заменим это на 'validate' и добавим Flyway/Liquibase.
+      ddl-auto: update
+    show-sql: true # Выводит SQL-запросы в консоль (удобно для отладки)
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Секретный ключ для подписи JWT (должен быть длинным и сложным) и время жизни токена
+jwt:
+  secret: Y29tcGxleC1zZWNyZXQta2V5LWZvci1sbXMtYXBwbGljYXRpb24td2hpY2gtbXVzdC1iZS1hdC1sZWFzdC0yNTYtYml0cw==
+  expiration: 86400000 # 24 часа в миллисекундах

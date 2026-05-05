@@ -1,6 +1,6 @@
-package com.mpanyavin.algoschool.module_assessment.entity;
+package com.algoschool.module_assessment.entity;
 
-import com.mpanyavin.algoschool.module_user.entity.User;
+import com.algoschool.module_user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 

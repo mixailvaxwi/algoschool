@@ -1,6 +1,6 @@
-package com.mpanyavin.algoschool.module_assessment.repository;
+package com.algoschool.module_assessment.repository;
 
-import com.mpanyavin.algoschool.module_assessment.entity.Problem;
+import com.algoschool.module_assessment.entity.Problem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

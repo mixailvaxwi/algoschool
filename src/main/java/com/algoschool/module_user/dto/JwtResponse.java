@@ -1,4 +1,4 @@
-package com.mpanyavin.algoschool.module_user.dto;
+package com.algoschool.module_user.dto;
 
 public record JwtResponse(
         String token,
@@ -6,10 +6,9 @@ public record JwtResponse(
         Long id,
         String username,
         String email,
-        String role,
-        Integer balance // Фронтенду сразу полезно знать баланс при входе
+        String role
 ) {
-    public JwtResponse(String token, Long id, String username, String email, String role, Integer balance) {
-        this(token, "Bearer", id, username, email, role, balance);
+    public JwtResponse(String token, Long id, String username, String email, String role) {
+        this(token, "Bearer", id, username, email, role);
     }
 }

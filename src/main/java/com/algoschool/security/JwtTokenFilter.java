@@ -1,4 +1,4 @@
-package com.mpanyavin.algoschool.security;
+package com.algoschool.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

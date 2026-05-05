@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { BookOpen, Users, LayoutDashboard, ArrowLeft } from 'lucide-react';
 
-export const AdminLayout = () => {
+export const TeacherLayout = () => {
     const location = useLocation();
 
     const isActive = (path: string) => location.pathname.includes(path);

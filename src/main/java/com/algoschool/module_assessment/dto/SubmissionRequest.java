@@ -1,12 +1,6 @@
-package com.mpanyavin.algoschool.module_assessment.dto;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+package com.algoschool.module_assessment.dto;
 
 public record SubmissionRequest(
-        @NotNull(message = "ID задачи не может быть пустым")
-        Long problemId,
-
-        @NotBlank(message = "Ответ не может быть пустым")
-        String payload // Введенный текст, ID выбранных вариантов (через запятую) или исходный код
+        // Сюда придет текст ответа, индекс радио-кнопки (в виде строки "1") или весь исходный код
+        String answer
 ) {}

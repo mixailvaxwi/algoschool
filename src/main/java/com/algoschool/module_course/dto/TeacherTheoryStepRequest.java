@@ -1,4 +1,9 @@
 package com.algoschool.module_course.dto;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-public class TeacherTheoryStepRequest {
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class TeacherTheoryStepRequest extends TeacherStepRequest {
+    private String content;
 }

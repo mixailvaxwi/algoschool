@@ -3,47 +3,39 @@ package com.algoschool.module_course.controller;
 import com.algoschool.module_course.dto.TeacherCourseRequest;
 import com.algoschool.module_course.entity.Course;
 import com.algoschool.module_course.service.CourseService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/courses")
+@RequestMapping("/api/teacher/courses") // <-- Тот самый путь, который не мог найти фронтенд!
 @RequiredArgsConstructor
-public class AdminCourseController {
+public class TeacherCourseController {
 
     private final CourseService courseService;
 
-    // Получить ВСЕ курсы (включая черновики) для таблицы
+    // 1. Получить все курсы текущего преподавателя
     @GetMapping
-    public ResponseEntity<List<Course>> getAllCourses() {
-        return ResponseEntity.ok(courseService.getAllCoursesForAdmin());
+    public ResponseEntity<List<Course>> getMyCourses(Authentication authentication) {
+        // authentication.getName() обычно возвращает username или email текущего юзера
+        return ResponseEntity.ok(courseService.getAllCoursesForTeacher(authentication.getName()));
     }
 
-    // Создать новый курс (наша форма)
+    // 2. Создать новый курс
     @PostMapping
-    public ResponseEntity<Course> createCourse(@Valid @RequestBody TeacherCourseRequest request) {
-        Course created = courseService.createCourse(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public ResponseEntity<Course> createCourse(@RequestBody TeacherCourseRequest request,
+                                               Authentication authentication) {
+        Course createdCourse = courseService.createCourse(request, authentication.getName());
+        return ResponseEntity.ok(createdCourse);
     }
 
-    // Обновить курс
-    @PutMapping("/{id}")
-    public ResponseEntity<Course> updateCourse(
-            @PathVariable Long id,
-            @Valid @RequestBody TeacherCourseRequest request
-    ) {
-        Course updated = courseService.updateCourse(id, request);
-        return ResponseEntity.ok(updated);
-    }
-
-    // Удалить курс
+    // 3. Удалить курс
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCourse(@PathVariable Long id,
+                                             Authentication authentication) {
         courseService.deleteCourse(id);
         return ResponseEntity.noContent().build();
     }

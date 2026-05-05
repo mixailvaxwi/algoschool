@@ -1,6 +1,6 @@
-package com.mpanyavin.algoschool.module_user.service;
+package com.algoschool.module_user.service;
 
-import com.mpanyavin.algoschool.module_user.dto.UserProfileResponse;
+import com.algoschool.module_user.dto.UserProfileResponse;
 
 public interface UserService {
     UserProfileResponse getUserProfile(Long userId);

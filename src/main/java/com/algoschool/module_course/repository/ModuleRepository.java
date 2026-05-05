@@ -1,4 +1,7 @@
-package com.mpanyavin.algoschool.module_course.repository;
+package com.algoschool.module_course.repository;
 
-public interface ModuleRepository {
+import com.algoschool.module_course.entity.Module;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ModuleRepository extends JpaRepository<Module, Long> {
 }

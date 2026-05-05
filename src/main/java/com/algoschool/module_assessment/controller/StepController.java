@@ -1,7 +1,7 @@
-package com.mpanyavin.algoschool.module_assessment.controller;
+package com.algoschool.module_assessment.controller;
 
-import com.mpanyavin.algoschool.module_assessment.entity.Step;
-import com.mpanyavin.algoschool.module_assessment.repository.StepRepository;
+import com.algoschool.module_assessment.entity.Step;
+import com.algoschool.module_assessment.repository.StepRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
