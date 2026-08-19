@@ -29,9 +29,11 @@ import java.util.ArrayList;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.algoschool.ejudge.EjudgeClient;
+import com.algoschool.ejudge.EjudgeUnavailableException;
+import com.algoschool.ejudge.EjudgeVerdictMapper;
+import com.algoschool.submission.dto.PendingRun;
 import com.algoschool.ejudge.dto.EjudgeRunStatusResponse;
 import com.algoschool.step.entity.CodeProblem;
-import org.springframework.scheduling.annotation.Scheduled;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -47,6 +49,7 @@ public class SubmissionService {
     private final EjudgeClient ejudgeClient;
     private final CourseAccessService courseAccess;
     private final ProblemRepository problemRepository;
+    private final EjudgeVerdictMapper verdictMapper;
 
     @Transactional
     public AssessmentResult processSubmission(Long stepId, SubmissionRequest request, String username) {
@@ -83,17 +86,20 @@ public class SubmissionService {
 
         if (problem instanceof CodeProblem codeProblem) {
             try {
-                // Временно хардкодим "3" (Java в Ejudge). Позже можно брать из UI.
                 Integer runId = ejudgeClient.submitRun(
                         codeProblem.getEjudgeContestId(),
                         codeProblem.getEjudgeProblemId(),
-                        "3",
+                        codeProblem.getAllowedLanguages(),
                         request.getPayload()
                 );
                 submission.setExternalRunId(runId);
-            } catch (Exception e) {
-                submission.setStatus(SubmissionStatus.RUNTIME_ERROR);
-                log.error("Не удалось отправить код в Ejudge", e);
+            } catch (EjudgeUnavailableException e) {
+                // Недоступность проверяющей системы — не вердикт по коду студента.
+                // Раньше здесь ставился RUNTIME_ERROR, и студент видел «ошибка
+                // выполнения» там, где на самом деле лежал Ejudge.
+                status = SubmissionStatus.SUBMISSION_FAILED;
+                submission.setStatus(status);
+                log.error("Решение не передано в Ejudge: {}", e.getMessage());
             }
         }
 
@@ -121,63 +127,55 @@ public class SubmissionService {
                 .build();
     }
 
-    @Scheduled(fixedDelay = 3000) // Опрашивать раз в 3 секунды
-    @Transactional
-    public void pollEjudgeStatuses() {
-        List<Submission> pendingSubmissions = submissionRepository.findByStatusWithProblem(SubmissionStatus.PENDING);
-
-        for (Submission sub : pendingSubmissions) {
-            if (sub.getExternalRunId() == null || !(sub.getProblem() instanceof CodeProblem problem)) continue;
-
-            try {
-                // ДОБАВЛЯЕМ ЛОГ, ЧТОБЫ ВИДЕТЬ, ЧТО ЦИКЛ РАБОТАЕТ
-                log.info("Спрашиваем статус у Ejudge для run_id: {}", sub.getExternalRunId());
-
-                EjudgeRunStatusResponse statusResponse = ejudgeClient.getRunStatus(problem.getEjudgeContestId(), sub.getExternalRunId());
-
-                if (statusResponse != null && statusResponse.isOk() && statusResponse.getResult() != null) {
-                    Integer ejudgeStatus = statusResponse.getResult().getRun().getStatus();
-
-                    // В Ejudge статусы 11 (Pending) и 16 (Pending Review) означают, что проверка идет
-                    // Статусы <= 95 (обычно 0-10) — это финальные вердикты
-                    if (ejudgeStatus <= 95 && ejudgeStatus != 11 && ejudgeStatus != 16) {
-                        SubmissionStatus mappedStatus = mapEjudgeStatus(ejudgeStatus);
-                        sub.setStatus(mappedStatus);
-
-                        // --- СОХРАНЯЕМ ЛОГ КОМПИЛЯТОРА ---
-                        if (statusResponse.getResult().getCompilerOutput() != null) {
-                            sub.setCompilerOutput(statusResponse.getResult().getCompilerOutput());
-                        }
-
-                        // --- СОХРАНЯЕМ ТЕСТЫ В ВИДЕ JSON-СТРОКИ ---
-                        if (statusResponse.getResult().getTests() != null) {
-                            sub.setTestResultsJson(statusResponse.getResult().getTests().toString());
-                        }
-
-                        submissionRepository.save(sub);
-
-                        // Если ответ верный, начисляем прогресс через твой же метод!
-                        if (mappedStatus == SubmissionStatus.CORRECT) {
-                            updateUserProgress(sub.getUser(), problem, sub.getPayload());
-                        }
-                        log.info("Решение {} проверено Ejudge. Новый статус: {}", sub.getId(), mappedStatus);
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Ошибка при опросе решения {}", sub.getId(), e);
-            }
-        }
+    /**
+     * Решения, ожидающие вердикта. Отдаём только идентификаторы: опрос ходит
+     * по сети вне транзакции, и сущности там были бы отсоединены.
+     */
+    @Transactional(readOnly = true)
+    public List<PendingRun> findPendingRuns() {
+        return submissionRepository.findByStatusWithProblem(SubmissionStatus.PENDING).stream()
+                .filter(sub -> sub.getExternalRunId() != null)
+                .filter(sub -> sub.getProblem() instanceof CodeProblem)
+                .map(sub -> new PendingRun(
+                        sub.getId(),
+                        ((CodeProblem) sub.getProblem()).getEjudgeContestId(),
+                        sub.getExternalRunId()))
+                .toList();
     }
 
-    private SubmissionStatus mapEjudgeStatus(Integer ejudgeStatus) {
-        return switch (ejudgeStatus) {
-            case 0 -> SubmissionStatus.CORRECT; // OK
-            case 1 -> SubmissionStatus.COMPILATION_ERROR; // CE
-            case 2 -> SubmissionStatus.RUNTIME_ERROR; // RE
-            case 3 -> SubmissionStatus.TIME_LIMIT_EXCEEDED; // TL
-            case 12 -> SubmissionStatus.MEMORY_LIMIT_EXCEEDED; // ML
-            default -> SubmissionStatus.WRONG_ANSWER; // WA и прочие ошибки
-        };
+    /**
+     * Записывает вердикт Ejudge. Отдельная короткая транзакция: сетевой вызов
+     * уже сделан вызывающим (EjudgePoller) и в неё не попадает.
+     */
+    @Transactional
+    public void applyEjudgeVerdict(Long submissionId, EjudgeRunStatusResponse response) {
+        Integer ejudgeStatus = response.getResult().getRun() != null
+                ? response.getResult().getRun().getStatus()
+                : null;
+
+        SubmissionStatus mapped = verdictMapper.toFinalStatus(ejudgeStatus).orElse(null);
+        if (mapped == null) {
+            return; // проверка ещё идёт либо код вердикта незнаком — спросим позже
+        }
+
+        Submission sub = submissionRepository.findById(submissionId).orElse(null);
+        if (sub == null || sub.getStatus() != SubmissionStatus.PENDING) {
+            return; // решение удалили или вердикт уже записали
+        }
+
+        sub.setStatus(mapped);
+        if (response.getResult().getCompilerOutput() != null) {
+            sub.setCompilerOutput(response.getResult().getCompilerOutput());
+        }
+        if (response.getResult().getTests() != null) {
+            sub.setTestResultsJson(response.getResult().getTests().toString());
+        }
+        submissionRepository.save(sub);
+
+        if (mapped == SubmissionStatus.CORRECT && sub.getProblem() instanceof Problem problem) {
+            updateUserProgress(sub.getUser(), problem, sub.getPayload());
+        }
+        log.info("Решение {} проверено Ejudge: {}", submissionId, mapped);
     }
 
     // Вспомогательный метод для генерации текстов
@@ -187,6 +185,7 @@ public class SubmissionService {
             case WRONG_ANSWER -> "Ответ неверный. Попробуйте еще раз.";
             case PENDING -> "Решение отправлено на проверку (может занять некоторое время).";
             case COMPILATION_ERROR -> "Ошибка компиляции кода.";
+            case SUBMISSION_FAILED -> "Проверяющая система недоступна. Решение сохранено, попробуйте отправить его позже.";
             default -> "Произошла ошибка при выполнении.";
         };
     }

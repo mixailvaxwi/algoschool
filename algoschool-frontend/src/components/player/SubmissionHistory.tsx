@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../api/axios';
 import { useParams } from 'react-router-dom';
-import { CheckCircle, XCircle, Clock, Terminal, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Terminal, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 
 interface HistoryRecord {
     id: number;
@@ -54,6 +54,9 @@ export const SubmissionHistory: React.FC<Props> = ({ stepId, refreshKey }) => {
                 {visibleHistory.map((record, index) => {
                     const isCorrect = record.status === 'CORRECT';
                     const isPending = record.status === 'PENDING';
+                    // Сбой проверяющей системы — не вердикт по решению.
+                    // Красный крестик здесь читался бы как «ответ неверный».
+                    const isFailed = record.status === 'SUBMISSION_FAILED';
 
                     return (
                         <div key={record.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -61,11 +64,13 @@ export const SubmissionHistory: React.FC<Props> = ({ stepId, refreshKey }) => {
                                 <div className="shrink-0 mt-0.5 sm:mt-0">
                                     {isCorrect ? <CheckCircle className="text-emerald-500" size={20} />
                                         : isPending ? <Clock className="text-amber-500" size={20} />
-                                            : <XCircle className="text-red-500" size={20} />}
+                                            : isFailed ? <AlertTriangle className="text-orange-500" size={20} />
+                                                : <XCircle className="text-red-500" size={20} />}
                                 </div>
                                 <div>
                                     <div className="font-medium text-slate-800 text-sm">
                                         Попытка #{history.length - index}
+                                        {isFailed && <span className="ml-2 font-normal text-orange-600">не удалось отправить на проверку</span>}
                                     </div>
                                     <div className="text-xs text-slate-500">
                                         {new Date(record.createdAt).toLocaleString('ru-RU')}

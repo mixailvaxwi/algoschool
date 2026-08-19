@@ -7,5 +7,10 @@ public enum SubmissionStatus {
     COMPILATION_ERROR,      // Ошибка компиляции (CE)
     TIME_LIMIT_EXCEEDED,    // Превышен лимит времени (TLE)
     MEMORY_LIMIT_EXCEEDED,  // Превышен лимит памяти (MLE)
-    RUNTIME_ERROR           // Ошибка во время выполнения (RE)
+    RUNTIME_ERROR,          // Ошибка во время выполнения (RE)
+
+    // Сбой инфраструктуры, а не вердикт: решение не удалось передать проверяющей
+    // системе. Раньше в этом случае ставился RUNTIME_ERROR, и студент видел
+    // «ошибка выполнения» вместо «проверяющая система недоступна».
+    SUBMISSION_FAILED
 }

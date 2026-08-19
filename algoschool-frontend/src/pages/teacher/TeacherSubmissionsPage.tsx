@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiClient } from '../../api/axios';
 // @ts-ignore
-import { CheckCircle, XCircle, Clock, Terminal, Search, Filter, ArrowUpDown } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Terminal, Search, Filter, ArrowUpDown, AlertTriangle } from 'lucide-react';
 
 interface TeacherSubmissionDto {
     id: number;
@@ -110,6 +110,8 @@ export const TeacherSubmissionsPage = () => {
             case 'WRONG_ANSWER': return <span className="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-md text-xs font-bold"><XCircle size={14}/> Ошибка</span>;
             case 'PENDING': return <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-md text-xs font-bold"><Clock size={14}/> Проверяется</span>;
             case 'COMPILATION_ERROR': return <span className="flex items-center gap-1 text-purple-600 bg-purple-50 px-2 py-1 rounded-md text-xs font-bold"><Terminal size={14}/> Ош. компиляции</span>;
+            // Сбой инфраструктуры, а не ошибка студента
+            case 'SUBMISSION_FAILED': return <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-2 py-1 rounded-md text-xs font-bold"><AlertTriangle size={14}/> Не отправлено</span>;
             default: return <span className="text-slate-500 text-xs">{status}</span>;
         }
     };

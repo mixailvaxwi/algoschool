@@ -36,3 +36,20 @@ ejudge:
   # Пустой по умолчанию, чтобы можно было поднять приложение локально без Ejudge.
   api-key: ${EJUDGE_API_KEY:}
   bot-login: ${EJUDGE_BOT_LOGIN:ejudge}
+
+  # Таймауты обязательны: без них недоступный Ejudge держал поток планировщика
+  # (а раньше — и открытую транзакцию) неограниченно долго.
+  connect-timeout-ms: 3000
+  read-timeout-ms: 10000
+
+  # lang_id раньше был зашит в коде как "3" (Java). Значения зависят от
+  # конкретной установки Ejudge — сверьтесь со своей и дополните список.
+  default-lang-id: 3
+  language-ids:
+    java: 3
+
+  polling:
+    # Выключите, если Ejudge не поднят: иначе опрос пишет предупреждение
+    # каждый интервал.
+    enabled: ${EJUDGE_POLLING_ENABLED:true}
+    interval-ms: 3000
