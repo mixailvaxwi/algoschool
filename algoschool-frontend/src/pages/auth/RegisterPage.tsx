@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiClient } from '../../api/axios';
-import { UserPlus, GraduationCap, BookOpen } from 'lucide-react';
+import { UserPlus, GraduationCap } from 'lucide-react';
 
 export const RegisterPage = () => {
     const navigate = useNavigate();
@@ -12,7 +12,6 @@ export const RegisterPage = () => {
         username: '',
         email: '',
         password: '',
-        role: 'ROLE_STUDENT'
     });
 
     // Отдельное состояние для повторного ввода пароля (не отправляется на сервер)
@@ -59,32 +58,17 @@ export const RegisterPage = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
 
-                    {/* Выбор роли */}
-                    <div className="flex gap-4 mb-6">
-                        <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, role: 'STUDENT' })}
-                            className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                                formData.role === 'STUDENT' // <-- ИСПРАВЛЕНО: было 'USER'
-                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                    : 'border-slate-200 hover:border-blue-200 text-slate-500'
-                            }`}
-                        >
-                            <GraduationCap size={24} />
-                            <span className="font-medium text-sm">Студент</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, role: 'TEACHER' })}
-                            className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                                formData.role === 'TEACHER'
-                                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                    : 'border-slate-200 hover:border-emerald-200 text-slate-500'
-                            }`}
-                        >
-                            <BookOpen size={24} />
-                            <span className="font-medium text-sm">Преподаватель</span>
-                        </button>
+                    {/*
+                      Выбор роли убран: сервер больше не принимает role от клиента,
+                      иначе любой желающий регистрировался преподавателем или админом.
+                      Все новые аккаунты создаются студенческими; права преподавателя
+                      выдаёт администратор.
+                    */}
+                    <div className="flex items-start gap-3 mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-600">
+                        <GraduationCap size={20} className="shrink-0 mt-0.5 text-blue-600" />
+                        <p className="text-sm m-0">
+                            Аккаунт создаётся со статусом студента. Права преподавателя выдаёт администратор.
+                        </p>
                     </div>
 
                     <div>

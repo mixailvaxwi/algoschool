@@ -1,0 +1,19 @@
+package com.algoschool.course.service;
+
+import com.algoschool.course.dto.TeacherLessonRequest;
+import com.algoschool.course.dto.TeacherModuleRequest;
+import com.algoschool.course.dto.CourseStructureResponse;
+import com.algoschool.course.entity.Lesson;
+import com.algoschool.course.entity.Module;
+
+import java.util.List;
+
+/**
+ * Редактирование структуры курса. Каждый метод принимает username, потому что
+ * право на изменение проверяется по автору курса, а не по факту авторизации.
+ */
+public interface CourseStructureService {
+    List<CourseStructureResponse> getCourseStructure(Long courseId, String username);
+    Module addModule(Long courseId, TeacherModuleRequest request, String username);
+    Lesson addLesson(Long moduleId, TeacherLessonRequest request, String username);
+}

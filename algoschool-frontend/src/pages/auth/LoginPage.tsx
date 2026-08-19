@@ -18,19 +18,22 @@ export const LoginPage = () => {
 
         try {
             const response = await apiClient.post('/auth/login', formData);
-            const { token, ...user } = response.data;
 
-            if (token) {
+            // ИСПРАВЛЕНИЕ 1: Прямо достаем token и user из объекта data
+            const { token, user } = response.data;
+
+            if (token && user) {
+                // Теперь в стор летит правильный, плоский объект пользователя
                 login(token, user);
 
-                // Умный редирект в зависимости от роли
-                if (user.role === 'TEACHER') {
+                // ИСПРАВЛЕНИЕ 2: Проверяем роль с префиксом ROLE_
+                if (user.role === 'ROLE_TEACHER') {
                     navigate('/teacher/courses');
                 } else {
                     navigate('/courses');
                 }
             } else {
-                setError('Сервер не вернул токен авторизации');
+                setError('Сервер не вернул токен или данные пользователя');
             }
         } catch (err: any) {
             setError(err.response?.data?.message || 'Неверный логин или пароль');
@@ -43,7 +46,6 @@ export const LoginPage = () => {
         <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-slate-50 p-4 py-12">
             <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
                 <div className="flex flex-col items-center mb-8">
-                    {/* Обновили цвета иконки на синие */}
                     <div className="bg-blue-100 p-3 rounded-full mb-4 text-blue-600">
                         <LogIn size={32} />
                     </div>
@@ -55,14 +57,12 @@ export const LoginPage = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        {/* Примечание: если ваш бэкенд ждет email, поменяйте лейбл и placeholder */}
                         <label className="block text-sm font-medium text-slate-700 mb-1">Логин</label>
                         <input
                             type="text"
                             required
                             value={formData.username}
                             onChange={(e) => setFormData({...formData, username: e.target.value})}
-                            // Обновили цвета фокуса на синие
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                             placeholder="student@example.com"
                         />
@@ -79,7 +79,6 @@ export const LoginPage = () => {
                         />
                     </div>
 
-                    {/* Обновили кнопку на темную, как в регистрации */}
                     <button
                         type="submit"
                         disabled={isLoading}

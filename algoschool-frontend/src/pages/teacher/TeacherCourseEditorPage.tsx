@@ -161,10 +161,11 @@ export const TeacherCourseEditorPage = () => {
                                                     <span>{module.orderIndex}.{lesson.orderIndex}. {lesson.title}</span>
                                                 </div>
                                                 <button
-                                                    className="opacity-0 group-hover:opacity-100 text-xs bg-white border border-slate-200 px-3 py-1 rounded text-slate-600 hover:text-blue-600 transition-all shadow-sm"
-                                                    onClick={() => navigate(`/teacher/lessons/${lesson.id}`)}
+                                                    className="opacity-0 group-hover:opacity-100 text-xs bg-white border border-slate-200 px-3 py-1 rounded text-slate-600 hover:text-blue-600 transition-all shadow-sm flex items-center gap-1"
+                                                    // ВАЖНО: правильный роут в LessonEditorPage!
+                                                    onClick={() => navigate(`/teacher/courses/${courseId}/lessons/${lesson.id}/edit`)}
                                                 >
-                                                    Редактировать шаги
+                                                    <Plus size={14} /> Добавить шаги
                                                 </button>
                                             </div>
                                         ))}

@@ -1,30 +1,21 @@
-import { useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import type {CodeProblemStep} from '../playerTypes';
+import React, { useState, useRef } from 'react';
+import type { CodeProblemStep } from '../playerTypes';
 import { Code, Zap, Database, Upload, FileCode, Send, X, Terminal, CheckCircle, XCircle } from 'lucide-react';
 import Editor from '@monaco-editor/react';
-import { apiClient } from '../../../api/axios';
-import { useLessonStore } from '../../../store/useLessonStore';
-import { useAuthStore } from '../../../store/authStore';
+import type { AssessmentResult } from '../StepRenderer';
 
-interface AssessmentResult {
-    isCorrect: boolean;
-    message: string;
-    xpAwarded: number;
+interface Props {
+    step: CodeProblemStep;
+    onSubmit: (payload: string) => Promise<AssessmentResult | null>;
+    isLoading: boolean;
 }
 
-export const CodeStepDisplay: React.FC<{ step: CodeProblemStep }> = ({ step }) => {
-    const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
-    const addCompletedStep = useLessonStore((state) => state.addCompletedStep);
-    const updateXp = useAuthStore((state) => state.updateXp);
-
+export const CodeStepDisplay: React.FC<Props> = ({ step, onSubmit, isLoading }) => {
     const [submitMethod, setSubmitMethod] = useState<'editor' | 'file'>('editor');
-    const [code, setCode] = useState('public class Main {\n    public static void main(String[] args) {\n        // Ваш код здесь\n    }\n}');
-
+    // Исправили опечатку в стартовом коде (String[] args)
+    const [code, setCode] = useState('public class Main {\n  public static void main(String[] args) {\n    // Ваш код здесь\n  }\n}');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [result, setResult] = useState<AssessmentResult | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,7 +31,6 @@ export const CodeStepDisplay: React.FC<{ step: CodeProblemStep }> = ({ step }) =
 
     const handleSubmit = async () => {
         let finalCodeToSubmit = '';
-
         if (submitMethod === 'editor') {
             finalCodeToSubmit = code;
         } else if (submitMethod === 'file' && selectedFile) {
@@ -49,29 +39,12 @@ export const CodeStepDisplay: React.FC<{ step: CodeProblemStep }> = ({ step }) =
             return;
         }
 
-        setIsSubmitting(true);
         setResult(null);
-
-        try {
-            const response = await apiClient.post<AssessmentResult>(
-                `/courses/${courseId}/lessons/${lessonId}/steps/${step.id}/submit`,
-                { answer: finalCodeToSubmit }
-            );
-            setResult(response.data);
-
-            if (response.data.isCorrect) {
-                addCompletedStep(step.id);
-                if (response.data.xpAwarded > 0) {
-                    updateXp(response.data.xpAwarded);
-                }
-            }
-        } catch (error: any) {
-            console.error(error);
-            alert('Ошибка связи с сервером!');
-        } finally {
-            setIsSubmitting(false);
-        }
+        const res = await onSubmit(finalCodeToSubmit);
+        if (res) setResult(res);
     };
+
+    const isAccepted = result?.status === 'ACCEPTED';
 
     return (
         <div className="space-y-6 flex flex-col h-full">
@@ -84,7 +57,6 @@ export const CodeStepDisplay: React.FC<{ step: CodeProblemStep }> = ({ step }) =
                 <div className="text-slate-700 whitespace-pre-wrap leading-relaxed text-lg">
                     {step.description}
                 </div>
-
                 <div className="flex flex-wrap gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm">
                     <div className="flex items-center gap-2 text-slate-700 font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
                         <Zap size={16} className="text-amber-500" /> Время: {step.timeLimitSec} сек
@@ -100,17 +72,14 @@ export const CodeStepDisplay: React.FC<{ step: CodeProblemStep }> = ({ step }) =
 
             {result && (
                 <div className={`mt-2 p-4 rounded-xl flex items-start gap-3 border ${
-                    result.isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'
+                    isAccepted ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'
                 }`}>
-                    {result.isCorrect ? <CheckCircle className="shrink-0 mt-0.5" /> : <XCircle className="shrink-0 mt-0.5" />}
+                    {isAccepted ? <CheckCircle className="shrink-0 mt-0.5" /> : <XCircle className="shrink-0 mt-0.5" />}
                     <div className="w-full">
-                        <p className="font-bold text-lg">{result.isCorrect ? 'Решение принято!' : 'Ошибка компиляции / выполнения'}</p>
+                        <p className="font-bold text-lg">{isAccepted ? 'Решение принято!' : 'Ошибка выполнения'}</p>
                         <pre className="mt-2 p-3 bg-white/60 rounded border border-black/10 text-sm whitespace-pre-wrap font-mono">
                             {result.message}
                         </pre>
-                        {result.xpAwarded > 0 && (
-                            <p className="mt-3 font-bold text-emerald-600">+ {result.xpAwarded} XP</p>
-                        )}
                     </div>
                 </div>
             )}
@@ -143,9 +112,9 @@ export const CodeStepDisplay: React.FC<{ step: CodeProblemStep }> = ({ step }) =
                                 defaultLanguage="java"
                                 theme="vs-dark"
                                 value={code}
-                                onChange={(value) => !result?.isCorrect && setCode(value || '')}
+                                onChange={(value) => !isAccepted && setCode(value || '')}
                                 options={{
-                                    readOnly: result?.isCorrect,
+                                    readOnly: isAccepted,
                                     minimap: { enabled: false },
                                     fontSize: 15,
                                     padding: { top: 16 }
@@ -156,21 +125,27 @@ export const CodeStepDisplay: React.FC<{ step: CodeProblemStep }> = ({ step }) =
                         <div className="absolute inset-0 flex items-center justify-center bg-white p-8">
                             <div className="w-full max-w-md">
                                 {!selectedFile ? (
-                                    <label className={`flex flex-col items-center justify-center w-full h-64 border-2 border-slate-300 border-dashed rounded-xl transition-all ${result?.isCorrect ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-blue-400'}`}>
+                                    <label className={`flex flex-col items-center justify-center w-full h-64 border-2 border-slate-300 border-dashed rounded-xl transition-all ${
+                                        isAccepted ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-blue-400'
+                                    }`}>
                                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                             <Upload className="w-12 h-12 text-slate-400 mb-4" />
                                             <p className="mb-2 text-sm text-slate-700 font-medium">Нажмите для загрузки или перетащите файл</p>
                                         </div>
                                         <input
-                                            ref={fileInputRef} type="file" className="hidden" accept=".java,.py,.cpp,.txt,.c,.cs"
-                                            onChange={handleFileChange} disabled={result?.isCorrect}
+                                            ref={fileInputRef}
+                                            type="file"
+                                            className="hidden"
+                                            accept=".java,.py,.cpp,.txt,.c,.cs"
+                                            onChange={handleFileChange}
+                                            disabled={isAccepted}
                                         />
                                     </label>
                                 ) : (
                                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 flex flex-col items-center text-center">
                                         <FileCode className="w-16 h-16 text-blue-500 mb-4" />
                                         <h3 className="text-lg font-bold text-slate-800 break-all">{selectedFile.name}</h3>
-                                        {!result?.isCorrect && (
+                                        {!isAccepted && (
                                             <button onClick={clearFile} className="mt-4 text-red-500 hover:text-red-700 text-sm font-medium flex items-center gap-1">
                                                 <X size={16} /> Выбрать другой файл
                                             </button>
@@ -186,10 +161,10 @@ export const CodeStepDisplay: React.FC<{ step: CodeProblemStep }> = ({ step }) =
             <div className="pt-4 shrink-0 flex justify-end">
                 <button
                     onClick={handleSubmit}
-                    disabled={isSubmitting || result?.isCorrect || (submitMethod === 'file' && !selectedFile)}
-                    className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    disabled={isLoading || isAccepted || (submitMethod === 'file' && !selectedFile)}
+                    className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
-                    {isSubmitting ? 'Проверяем код...' : <><Send size={20} /> Отправить на проверку</>}
+                    {isLoading ? 'Проверяем код...' : <><Send size={20} /> Отправить на проверку</>}
                 </button>
             </div>
         </div>

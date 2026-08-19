@@ -10,9 +10,14 @@ import { TeacherRoute } from './components/TeacherRoute';
 import { TeacherLayout } from './layouts/TeacherLayout';
 import { TeacherCoursesPage } from './pages/teacher/TeacherCoursesPage';
 import { TeacherCourseEditorPage } from './pages/teacher/TeacherCourseEditorPage';
-import { TeacherLessonEditorPage } from './pages/teacher/TeacherLessonEditorPage';
+import { LessonEditorPage } from './pages/teacher/LessonEditorPage';
 import { LessonPlayerPage } from './pages/student/LessonPlayerPage';
-import { CourseApplicationsPage } from './pages/teacher/CourseApplicationsPage';
+import { TeacherApplicationsPage } from './pages/teacher/TeacherApplicationsPage';
+import { TeacherSubmissionsPage } from './pages/teacher/TeacherSubmissionsPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { PublicProfilePage } from './pages/PublicProfilePage';
+import { MyApplicationsPage } from './pages/MyApplicationsPage';
+import { MyCoursesPage } from './pages/MyCoursesPage';
 import type {JSX} from "react";
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -33,9 +38,10 @@ function App() {
                         <Route index element={<Navigate to="courses" replace />} />
                         <Route path="courses" element={<TeacherCoursesPage />} />
                         <Route path="courses/:courseId" element={<TeacherCourseEditorPage />} />
-                        <Route path="courses/:courseId/applications" element={<CourseApplicationsPage />} />
+                        <Route path="courses/:courseId/lessons/:lessonId/edit" element={<LessonEditorPage />} />
+                        <Route path="courses/:courseId/applications" element={<TeacherApplicationsPage />} />
+                        <Route path="submissions" element={<TeacherSubmissionsPage />} />
                         <Route path="users" element={<div>Страница пользователей (в разработке)</div>} />
-                        <Route path="lessons/:lessonId" element={<TeacherLessonEditorPage />} />
                     </Route>
                 </Route>
 
@@ -47,9 +53,13 @@ function App() {
                                 <Routes>
                                     <Route path="/" element={<div className="text-2xl font-bold">Главная страница</div>} />
                                     <Route path="/courses" element={<CatalogPage />} />
+                                    <Route path="/courses/enrolled" element={<ProtectedRoute><MyCoursesPage /></ProtectedRoute>} />
                                     <Route path="/courses/:courseId" element={<CoursePage />} />
                                     <Route path="/courses/:courseId/lessons/:lessonId" element={<LessonPlayerPage />} />
                                     <Route path="/lessons/:lessonId" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
+                                    <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                                    <Route path="/users/:username" element={<ProtectedRoute><PublicProfilePage /></ProtectedRoute>} />
+                                    <Route path="/my-applications" element={<ProtectedRoute><MyApplicationsPage /></ProtectedRoute>} />
                                 </Routes>
                             </main>
                         </div>

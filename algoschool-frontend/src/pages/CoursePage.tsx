@@ -39,26 +39,26 @@ export const CoursePage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEnrolling, setIsEnrolling] = useState(false);
 
+    const fetchCourseData = async () => {
+        try {
+            // Запрашиваем параллельно и информацию о курсе, и его структуру
+            const [infoResponse, structureResponse] = await Promise.all([
+                apiClient.get(`/courses/${courseId}`),
+                apiClient.get(`/courses/${courseId}/structure`)
+            ]);
+
+            setCourse(infoResponse.data);
+            setModules(structureResponse.data);
+        } catch (err) {
+            setError('Не удалось загрузить данные курса.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchCourseData = async () => {
-            try {
-                // Запрашиваем параллельно и информацию о курсе, и его структуру
-                const [infoResponse, structureResponse] = await Promise.all([
-                    apiClient.get(`/courses/${courseId}`),
-                    apiClient.get(`/courses/${courseId}/structure`)
-                ]);
-
-                setCourse(infoResponse.data);
-                setModules(structureResponse.data);
-            } catch (err) {
-                setError('Не удалось загрузить данные курса.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         if (courseId) {
-            fetchCourseData();
+            fetchCourseData().then();
         }
     }, [courseId]);
 
@@ -176,7 +176,7 @@ export const CoursePage = () => {
             <CourseApplicationModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                courseId={Number(courseId)}
+                courseld={Number(courseId)}
                 courseTitle={course.title}
                 onSuccess={() => {
                     // Обновляем статус, чтобы кнопка стала серой

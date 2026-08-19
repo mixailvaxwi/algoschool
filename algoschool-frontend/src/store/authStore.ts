@@ -5,8 +5,6 @@ interface UserProfile {
     username: string;
     email: string;
     role: string;
-    totalXp: number;
-    balance: number;
 }
 
 interface AuthState {
@@ -14,39 +12,46 @@ interface AuthState {
     isAuthenticated: boolean;
     login: (token: string, user: UserProfile) => void;
     logout: () => void;
-    updateBalance: (newBalance: number) => void;
-    updateXp: (xpToAdd: number) => void;
 }
 
+/**
+ * Читает профиль из localStorage.
+ *
+ * Обёрнуто в try/catch намеренно: раньше голый JSON.parse выполнялся на уровне
+ * модуля, и любая испорченная запись (оборванная запись, ручная правка в
+ * DevTools, старый формат) роняла приложение белым экраном ещё до отрисовки.
+ * Теперь битые данные просто чистятся, и пользователь видит экран входа.
+ */
+const readStoredUser = (): UserProfile | null => {
+    const raw = localStorage.getItem('user_profile');
+    if (!raw) return null;
+
+    try {
+        return JSON.parse(raw) as UserProfile;
+    } catch {
+        localStorage.removeItem('user_profile');
+        localStorage.removeItem('token');
+        return null;
+    }
+};
+
+const storedUser = readStoredUser();
+
 export const useAuthStore = create<AuthState>((set) => ({
-    // Теперь при загрузке страницы мы достаем профиль из памяти браузера
-    user: JSON.parse(localStorage.getItem('user_profile') || 'null'),
-    isAuthenticated: !!localStorage.getItem('jwt_token'),
+    user: storedUser,
+    // Считаем вошедшим только когда есть и токен, и профиль: иначе Navbar и
+    // TeacherRoute получают isAuthenticated === true при user === null.
+    isAuthenticated: !!localStorage.getItem('token') && storedUser !== null,
 
     login: (token, user) => {
-        localStorage.setItem('jwt_token', token);
-        // Сохраняем профиль (с ролью ADMIN), чтобы он пережил F5
+        localStorage.setItem('token', token);
         localStorage.setItem('user_profile', JSON.stringify(user));
         set({ user, isAuthenticated: true });
     },
 
     logout: () => {
-        localStorage.removeItem('jwt_token');
-        localStorage.removeItem('user_profile'); // Не забываем удалять при выходе
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_profile');
         set({ user: null, isAuthenticated: false });
-    },
-
-    updateBalance: (newBalance) => set((state) => {
-        if (!state.user) return state;
-        const updatedUser = { ...state.user, balance: newBalance };
-        localStorage.setItem('user_profile', JSON.stringify(updatedUser));
-        return { user: updatedUser };
-    }),
-
-    updateXp: (xpToAdd) => set((state) => {
-        if (!state.user) return state;
-        const updatedUser = { ...state.user, totalXp: state.user.totalXp + xpToAdd };
-        localStorage.setItem('user_profile', JSON.stringify(updatedUser));
-        return { user: updatedUser };
-    })
+    }
 }));

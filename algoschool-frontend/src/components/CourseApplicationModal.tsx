@@ -1,63 +1,55 @@
 import { useState } from 'react';
 import { X, Send, AlertCircle } from 'lucide-react';
 import { apiClient } from '../api/axios';
+import { AxiosError } from 'axios';
 
 interface CourseApplicationModalProps {
     isOpen: boolean;
     onClose: () => void;
-    courseId: number;
+    courseld: number;
     courseTitle: string;
-    // Функция, которая вызовется при успешной отправке (чтобы обновить кнопку на "Заявка отправлена")
     onSuccess: () => void;
 }
 
 export const CourseApplicationModal = ({
                                            isOpen,
                                            onClose,
-                                           courseId,
+                                           courseld,
                                            courseTitle,
                                            onSuccess
                                        }: CourseApplicationModalProps) => {
-
     const [message, setMessage] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setlsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Если окно закрыто, вообще ничего не рендерим
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
+        setlsLoading(true);
         setError('');
 
         try {
-            // Отправляем запрос на наш новый эндпоинт
-            await apiClient.post(`/applications/courses/${courseId}/apply`, {
+            await apiClient.post(`/courses/${courseld}/apply`, {
                 message: message.trim()
             });
-
-            // Если всё прошло супер:
-            setMessage(''); // Очищаем форму
-            onSuccess();    // Сообщаем родителю, что всё ок
-            onClose();      // Закрываем модалку
-
-        } catch (err: any) {
-            // Ловим ошибки (например, если заявка уже была подана)
-            setError(err.response?.data?.message || 'Не удалось отправить заявку. Попробуйте позже.');
+            setMessage('');
+            onSuccess();
+            onClose();
+        } catch (err: unknown) {
+            if (err instanceof AxiosError) {
+                setError(err.response?.data?.message);
+            } else {
+                setError('Произошла непредвиденная ошибка.');
+            }
         } finally {
-            setIsLoading(false);
+            setlsLoading(false);
         }
     };
 
     return (
-        // Backdrop (Затемненный фон)
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity">
-
-            // Само модальное окно
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-
-                {/* Шапка модалки */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                     <h2 className="text-xl font-bold text-slate-800">Заявка на курс</h2>
                     <button
@@ -68,7 +60,6 @@ export const CourseApplicationModal = ({
                     </button>
                 </div>
 
-                {/* Тело модалки */}
                 <div className="p-6">
                     <div className="mb-4">
                         <p className="text-sm text-slate-500 mb-1">Вы подаете заявку на закрытый курс:</p>
@@ -97,7 +88,6 @@ export const CourseApplicationModal = ({
                     </form>
                 </div>
 
-                {/* Подвал с кнопками */}
                 <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-100">
                     <button
                         type="button"
@@ -110,10 +100,10 @@ export const CourseApplicationModal = ({
                     <button
                         type="submit"
                         form="application-form"
-                        disabled={isLoading || !message.trim()}
+                        disabled={isLoading ||!message.trim()}
                         className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-xl transition-colors"
                     >
-                        {isLoading ? 'Отправка...' : (
+                        {isLoading? 'Отправка...' : (
                             <>
                                 <span>Отправить заявку</span>
                                 <Send size={16} />
@@ -121,7 +111,6 @@ export const CourseApplicationModal = ({
                         )}
                     </button>
                 </div>
-
             </div>
         </div>
     );

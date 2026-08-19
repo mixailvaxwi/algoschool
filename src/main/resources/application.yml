@@ -3,23 +3,26 @@ spring:
     name: algoschool
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/algoschool
-    username: admin
-    password: admin # Замените на ваш пароль от локальной БД
-    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/algoschool?serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      # Для старта разработки 'update' автоматически создаст таблицы по вашим Entity-классам.
-      # Позже для продакшена мы заменим это на 'validate' и добавим Flyway/Liquibase.
       ddl-auto: update
-    show-sql: true # Выводит SQL-запросы в консоль (удобно для отладки)
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
 
-# Секретный ключ для подписи JWT (должен быть длинным и сложным) и время жизни токена
-jwt:
-  secret: Y29tcGxleC1zZWNyZXQta2V5LWZvci1sbXMtYXBwbGljYXRpb24td2hpY2gtbXVzdC1iZS1hdC1sZWFzdC0yNTYtYml0cw==
-  expiration: 86400000 # 24 часа в миллисекундах
+# Секреты берутся из переменных окружения — см. .env.example.
+# У DB_PASSWORD и JWT_SECRET нет значений по умолчанию: без них приложение не стартует.
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 86400000 # 24 часа в миллисекундах
+
+ejudge:
+  base-url: ${EJUDGE_BASE_URL:http://localhost}
+  # Пустой по умолчанию, чтобы можно было поднять приложение локально без Ejudge.
+  api-key: ${EJUDGE_API_KEY:}
+  bot-login: ${EJUDGE_BOT_LOGIN:ejudge}

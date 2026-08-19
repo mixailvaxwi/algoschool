@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { BookOpen, Users, LayoutDashboard, ArrowLeft } from 'lucide-react';
+import { BookOpen, Users, LayoutDashboard, ArrowLeft, Terminal } from 'lucide-react';
 
 export const TeacherLayout = () => {
     const location = useLocation();
@@ -39,6 +39,16 @@ export const TeacherLayout = () => {
                     >
                         <Users size={20} />
                         Пользователи
+                    </Link>
+
+                    <Link
+                        to="/teacher/submissions"
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                            isActive('/teacher/submissions') ? 'bg-blue-600 text-white' : 'hover:bg-slate-800 hover:text-white'
+                        }`}
+                    >
+                        <Terminal size={20} />
+                        Очередь тестирования
                     </Link>
                 </nav>
 

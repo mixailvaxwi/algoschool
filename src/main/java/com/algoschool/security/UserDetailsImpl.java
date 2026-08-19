@@ -1,6 +1,6 @@
 package com.algoschool.security;
 
-import com.algoschool.module_user.entity.User;
+import com.algoschool.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;

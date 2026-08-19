@@ -2,20 +2,22 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 export const TeacherRoute = () => {
+    // Достаем статус авторизации и объект пользователя напрямую из Zustand
     const { isAuthenticated, user } = useAuthStore();
 
-    // ВЫВОДИМ В КОНСОЛЬ ТО, ЧТО ВИДИТ ФРОНТЕНД
-    console.log("Профиль пользователя:", user);
+    // 1. Если пользователь вообще не вошел в систему -> отправляем на логин
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
 
-    // Проверяем, авторизован ли пользователь и имеет ли он роль ADMIN
-    // (Убедитесь, что ваш Spring Boot возвращает правильное название роли, например "ADMIN" или "ROLE_ADMIN")
-    const isAdmin = isAuthenticated && user && (user.role === 'TEACHER' || user.role === 'ROLE_TEACHER');
+    // 2. Проверяем наличие нужной роли в объекте пользователя
+    const isTeacher = user?.role === 'ROLE_TEACHER';
 
-    if (!isAdmin) {
-        // Если это не админ, отправляем его в общий каталог
+    // 3. Если он авторизован, но не учитель -> мягко выкидываем в обычный каталог курсов
+    if (!isTeacher) {
         return <Navigate to="/courses" replace />;
     }
 
-    // Outlet — это специальный компонент React Router, куда будут рендериться вложенные страницы (например, список курсов)
+    // 4. Если всё отлично, разрешаем отрисовку дочерних компонентов (страниц учителя)
     return <Outlet />;
 };
