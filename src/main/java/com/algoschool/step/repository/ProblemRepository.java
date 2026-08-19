@@ -1,4 +1,4 @@
-package com.algoschool.submission.repository;
+package com.algoschool.step.repository;
 
 import com.algoschool.step.entity.Problem;
 import org.springframework.data.jpa.repository.JpaRepository;

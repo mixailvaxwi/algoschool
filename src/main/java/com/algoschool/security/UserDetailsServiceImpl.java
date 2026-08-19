@@ -1,6 +1,5 @@
 package com.algoschool.security;
 
-import com.algoschool.user.entity.User;
 import com.algoschool.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,6 +8,16 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Единственная реализация {@link UserDetailsService}.
+ * <p>
+ * Раньше их было две: этот бин и лямбда в ApplicationConfig. Какая из них
+ * попадала в фильтр, решало совпадение имени параметра конструктора с именем
+ * бина — переименование параметра молча меняло принципала. Лямбда удалена.
+ * <p>
+ * Сущность {@code User} сама реализует {@code UserDetails}, поэтому
+ * отдельный адаптер (UserDetailsImpl) не нужен.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -18,13 +27,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Ищем пользователя в базе данных.
-        // Если в будущем вы захотите сделать авторизацию по email,
-        // здесь достаточно будет поменять вызов на userRepository.findByEmail(email)
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден с именем: " + username));
-
-        // Конвертируем нашу сущность User в объект, с которым умеет работать Spring Security
-        return UserDetailsImpl.build(user);
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + username));
     }
 }

@@ -3,7 +3,7 @@ package com.algoschool.auth.service;
 import com.algoschool.auth.dto.AuthResponse;
 import com.algoschool.auth.dto.LoginRequest;
 import com.algoschool.auth.dto.RegisterRequest;
-import com.algoschool.auth.dto.UserProfileDto;
+import com.algoschool.user.dto.UserProfileDto;
 import com.algoschool.exception.AppException;
 import com.algoschool.user.entity.Role;
 import com.algoschool.user.entity.User;

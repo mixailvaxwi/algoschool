@@ -1,14 +1,16 @@
 package com.algoschool.course.controller;
 
-import com.algoschool.exception.AppException;
-
-import com.algoschool.course.entity.ApplicationStatus;
+import com.algoschool.course.dto.teacher.ApplicationDto;
+import com.algoschool.course.dto.teacher.ApplicationStatusUpdateRequest;
 import com.algoschool.course.service.TeacherApplicationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,25 +20,31 @@ public class TeacherApplicationController {
 
     private final TeacherApplicationService teacherApplicationService;
 
-    // Метод получения списка (если он у тебя уже есть - просто проверь, что он работает через Principal)
     @GetMapping
-    public ResponseEntity<?> getApplications(@PathVariable Long courseId, Principal principal) {
-        if (principal == null) throw AppException.unauthorized("Необходима авторизация");
-        // Предполагается, что у тебя есть этот метод в сервисе
-        return ResponseEntity.ok(teacherApplicationService.getCourseApplications(principal.getName(), courseId));
+    public ResponseEntity<List<ApplicationDto>> getApplications(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal UserDetails currentUser) {
+        return ResponseEntity.ok(
+                teacherApplicationService.getCourseApplications(currentUser.getUsername(), courseId));
     }
 
+    /**
+     * Смена статуса заявки.
+     * <p>
+     * Раньше тело читалось как {@code Map<String, String>}, а статус получался
+     * через {@code ApplicationStatus.valueOf(body.get("status"))}: отсутствующее
+     * поле давало NPE, а незнакомое значение — IllegalArgumentException, и то и
+     * другое уходило наружу как 500. Типизированный DTO с @NotNull отвечает 400.
+     */
     @PutMapping("/{applicationId}/status")
-    public ResponseEntity<?> updateStatus(
+    public ResponseEntity<Map<String, String>> updateStatus(
             @PathVariable Long courseId,
             @PathVariable Long applicationId,
-            @RequestBody Map<String, String> body,
-            Principal principal) {
+            @Valid @RequestBody ApplicationStatusUpdateRequest request,
+            @AuthenticationPrincipal UserDetails currentUser) {
 
-        if (principal == null) throw AppException.unauthorized("Необходима авторизация");
-
-        ApplicationStatus newStatus = ApplicationStatus.valueOf(body.get("status"));
-        teacherApplicationService.changeApplicationStatus(principal.getName(), courseId, applicationId, newStatus);
+        teacherApplicationService.changeApplicationStatus(
+                currentUser.getUsername(), courseId, applicationId, request.getStatus());
 
         return ResponseEntity.ok(Map.of("message", "Статус заявки обновлен"));
     }

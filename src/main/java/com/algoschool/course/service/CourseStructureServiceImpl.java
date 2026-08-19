@@ -6,6 +6,7 @@ import com.algoschool.course.dto.CourseStructureResponse;
 import com.algoschool.course.entity.Course;
 import com.algoschool.course.entity.Lesson;
 import com.algoschool.course.entity.Module;
+import com.algoschool.course.repository.CourseRepository;
 import com.algoschool.course.repository.LessonRepository;
 import com.algoschool.course.repository.ModuleRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CourseStructureServiceImpl implements CourseStructureService {
 
+    private final CourseRepository courseRepository;
     private final ModuleRepository moduleRepository;
     private final LessonRepository lessonRepository;
     private final CourseAccessService courseAccess;
@@ -26,7 +28,15 @@ public class CourseStructureServiceImpl implements CourseStructureService {
     @Override
     @Transactional(readOnly = true)
     public List<CourseStructureResponse> getCourseStructure(Long courseId, String username) {
-        Course course = courseAccess.requireAuthor(courseId, username);
+        courseAccess.requireAuthor(courseId, username);
+        return getStructureTree(courseId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CourseStructureResponse> getStructureTree(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> com.algoschool.exception.AppException.notFound("Курс не найден"));
 
         // Превращаем сущности БД в удобное дерево для фронтенда
         return course.getModules().stream()

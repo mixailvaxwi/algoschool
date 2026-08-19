@@ -2,7 +2,7 @@ package com.algoschool.user.service;
 
 import com.algoschool.exception.AppException;
 
-import com.algoschool.auth.dto.UserProfileDto;
+import com.algoschool.user.dto.UserProfileDto;
 import com.algoschool.user.dto.PublicProfileDto;
 import com.algoschool.user.entity.User;
 import com.algoschool.user.repository.UserRepository;

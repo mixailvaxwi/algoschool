@@ -1,13 +1,14 @@
-package com.algoschool.course.service;
+package com.algoschool.step.service;
 
 import com.algoschool.exception.AppException;
 
 import com.algoschool.step.entity.Step;
-import com.algoschool.submission.dto.StepCreateRequest;
+import com.algoschool.step.dto.StepCreateRequest;
 import com.algoschool.step.entity.*;
 import com.algoschool.step.repository.StepRepository;
 import com.algoschool.course.entity.Lesson;
 import com.algoschool.course.repository.LessonRepository;
+import com.algoschool.course.service.CourseAccessService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;

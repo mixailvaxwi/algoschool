@@ -1,4 +1,4 @@
-package com.algoschool.submission.dto;
+package com.algoschool.step.dto;
 
 import lombok.Data;
 import java.util.List;

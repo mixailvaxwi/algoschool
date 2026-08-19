@@ -1,8 +1,8 @@
 package com.algoschool.course.controller;
 
-import com.algoschool.submission.dto.StepCreateRequest;
+import com.algoschool.step.dto.StepCreateRequest;
 import com.algoschool.step.entity.Step;
-import com.algoschool.course.service.StepService;
+import com.algoschool.step.service.StepService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

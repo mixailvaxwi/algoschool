@@ -1,6 +1,6 @@
-package com.algoschool.course.service;
+package com.algoschool.step.service;
 
-import com.algoschool.submission.dto.StepCreateRequest;
+import com.algoschool.step.dto.StepCreateRequest;
 import com.algoschool.step.entity.Step;
 
 public interface StepService {

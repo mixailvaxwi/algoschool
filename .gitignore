@@ -1,1 +1,26 @@
+# Сборка
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Зависимости и сборка фронтенда
 node_modules/
+dist/
+
+# Секреты: коммитится только .env.example
+.env
+.env.local
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Временные файлы редакторов диаграмм (drawio)
+*.bkp
+.$*
+
+# ОС
+.DS_Store
+Thumbs.db

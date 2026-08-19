@@ -33,6 +33,7 @@ public class StudentCourseService {
     private final UserCourseRepository userCourseRepository;
     private final CourseApplicationRepository applicationRepository;
     private final CourseAccessService courseAccess;
+    private final CourseStructureService structureService;
 
     @Transactional(readOnly = true)
     public List<CourseCatalogDto> getCatalog(String username) {
@@ -89,28 +90,19 @@ public class StudentCourseService {
         );
     }
 
+    /**
+     * Программа курса для витрины. Само дерево строит CourseStructureService —
+     * здесь остаётся только проверка видимости курса, чтобы не держать вторую
+     * копию одного и того же маппинга.
+     */
     @Transactional(readOnly = true)
     public List<CourseStructureResponse> getCourseStructure(Long courseId, String username) {
-        Course course = courseAccess.requireVisible(courseId, username);
-
-        return course.getModules().stream()
-                .map(module -> new CourseStructureResponse(
-                        module.getId(), module.getTitle(), module.getPositionIndex(),
-                        module.getLessons().stream()
-                                .map(l -> new CourseStructureResponse.LessonDto(l.getId(), l.getTitle(), l.getOrderIndex()))
-                                .toList()
-                )).toList();
+        courseAccess.requireVisible(courseId, username);
+        return structureService.getStructureTree(courseId);
     }
 
     // --- МЕТОДЫ ЗАПИСИ (С ПЕРЕГРУЗКОЙ) ---
 
-    // 1. Метод без EnrollmentRequest (как ты просил)
-    @Transactional
-    public EnrollmentResponse enrollInCourse(String username, Long courseId) {
-        return enrollInCourse(username, courseId, null);
-    }
-
-    // 2. Основной метод с EnrollmentRequest (универсальный)
     @Transactional
     public EnrollmentResponse enrollInCourse(String username, Long courseId, EnrollmentRequest request) {
         User student = userRepository.findByUsername(username)

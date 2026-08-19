@@ -17,10 +17,6 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long>, J
 
     boolean existsByUserIdAndProblemId(Long userId, Long problemId);
 
-    boolean existsByUserIdAndProblemIdAndStatus(Long userId, Long problemId, SubmissionStatus status);
-
-    List<Submission> findByStatus(SubmissionStatus status);
-
     @Query("SELECT s FROM Submission s JOIN FETCH s.problem WHERE s.status = :status")
     List<Submission> findByStatusWithProblem(@Param("status") SubmissionStatus status);
 }

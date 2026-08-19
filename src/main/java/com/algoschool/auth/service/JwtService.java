@@ -3,7 +3,6 @@ package com.algoschool.auth.service;
 import com.algoschool.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -13,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +24,7 @@ public class JwtService {
 
     private final JwtProperties jwtProperties;
 
-    private Key signInKey;
+    private SecretKey signInKey;
 
     /**
      * Ключ строится один раз на старте: любая проблема с секретом должна ронять
@@ -76,13 +75,13 @@ public class JwtService {
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
         long now = System.currentTimeMillis();
-        return Jwts
-                .builder()
-                .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(new Date(now))
-                .setExpiration(new Date(now + jwtProperties.getExpiration()))
-                .signWith(signInKey, SignatureAlgorithm.HS256)
+        return Jwts.builder()
+                .claims(extraClaims)
+                .subject(userDetails.getUsername())
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + jwtProperties.getExpiration()))
+                // Алгоритм выводится из ключа: 256-битный секрет -> HS256
+                .signWith(signInKey)
                 .compact();
     }
 
@@ -102,11 +101,10 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts
-                .parserBuilder()
-                .setSigningKey(signInKey)
+        return Jwts.parser()
+                .verifyWith(signInKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

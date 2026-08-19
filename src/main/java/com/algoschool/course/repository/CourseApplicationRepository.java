@@ -14,8 +14,6 @@ public interface CourseApplicationRepository extends JpaRepository<CourseApplica
 
     boolean existsByStudentAndCourseAndStatus(User student, Course course, ApplicationStatus status);
 
-    boolean existsByStudentIdAndCourseId(Long studentId, Long courseId);
-
     List<CourseApplication> findByCourseOrderByCreatedAtDesc(Course course);
 
     // --- ИСПРАВЛЕНИЕ ОШИБКИ: ДОБАВЛЯЕМ НОВЫЙ МЕТОД ---

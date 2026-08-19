@@ -1,6 +1,6 @@
 package com.algoschool.user.controller;
 
-import com.algoschool.auth.dto.UserProfileDto;
+import com.algoschool.user.dto.UserProfileDto;
 import com.algoschool.user.dto.PublicProfileDto;
 import com.algoschool.user.dto.UserProfileUpdateRequest;
 import com.algoschool.user.service.UserService;

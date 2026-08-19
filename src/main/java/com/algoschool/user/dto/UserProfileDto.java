@@ -1,4 +1,4 @@
-package com.algoschool.auth.dto;
+package com.algoschool.user.dto;
 
 import com.algoschool.user.entity.Role;
 import lombok.Builder;

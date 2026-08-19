@@ -12,7 +12,7 @@ import com.algoschool.submission.dto.SubmissionRequest;
 import com.algoschool.submission.entity.Submission;
 import com.algoschool.submission.entity.SubmissionStatus;
 import com.algoschool.submission.entity.UserStepProgress;
-import com.algoschool.submission.repository.ProblemRepository;
+import com.algoschool.step.repository.ProblemRepository;
 import com.algoschool.submission.repository.SubmissionRepository;
 import com.algoschool.submission.repository.UserStepProgressRepository;
 import com.algoschool.user.entity.User;

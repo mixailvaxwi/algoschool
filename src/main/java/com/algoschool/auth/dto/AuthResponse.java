@@ -1,5 +1,6 @@
 package com.algoschool.auth.dto;
 
+import com.algoschool.user.dto.UserProfileDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
