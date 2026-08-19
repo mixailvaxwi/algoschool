@@ -68,13 +68,13 @@ public class StudentLessonService {
         if (step instanceof TheoryStep theory) {
             TheoryStepPlayerDto dto = new TheoryStepPlayerDto();
             dto.setId(theory.getId());
-            dto.setPositionIndex(theory.getPositionIndex());
+            dto.setOrderIndex(theory.getOrderIndex());
             dto.setContent(theory.getContent());
             return dto;
         } else if (step instanceof CodeProblem code) {
             CodeProblemPlayerDto dto = new CodeProblemPlayerDto();
             dto.setId(code.getId());
-            dto.setPositionIndex(code.getPositionIndex());
+            dto.setOrderIndex(code.getOrderIndex());
             dto.setDescription(code.getDescription());
             dto.setTimeLimitSec(code.getTimeLimit());
             dto.setMemoryLimitMb(code.getMemoryLimit());
@@ -83,13 +83,13 @@ public class StudentLessonService {
         } else if (step instanceof TextProblem text) {
             TextProblemPlayerDto dto = new TextProblemPlayerDto();
             dto.setId(text.getId());
-            dto.setPositionIndex(text.getPositionIndex());
+            dto.setOrderIndex(text.getOrderIndex());
             dto.setDescription(text.getDescription());
             return dto;
         } else if (step instanceof ChoiceProblem choice) {
             ChoiceProblemPlayerDto dto = new ChoiceProblemPlayerDto();
             dto.setId(choice.getId());
-            dto.setPositionIndex(choice.getPositionIndex());
+            dto.setOrderIndex(choice.getOrderIndex());
             dto.setDescription(choice.getDescription());
             dto.setOptions(choice.getOptions());
             dto.setMultipleChoice(choice.isMultipleChoice());

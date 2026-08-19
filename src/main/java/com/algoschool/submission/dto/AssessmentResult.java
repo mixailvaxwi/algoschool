@@ -7,7 +7,8 @@ import lombok.Data;
 @Builder
 public class AssessmentResult {
     private Long submissionId;
-    private String status; // ACCEPTED, WRONG_ANSWER, COMPILATION_ERROR, PENDING
+    /** Имя значения SubmissionStatus: CORRECT, WRONG_ANSWER, COMPILATION_ERROR, PENDING... */
+    private String status;
     private String message;
     private String compilerOutput;
     private String testResultsJson;

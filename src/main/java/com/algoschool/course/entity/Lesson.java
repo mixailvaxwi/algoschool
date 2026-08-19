@@ -30,7 +30,7 @@ public class Lesson {
 
     // ВАЖНО: Добавлен orphanRemoval!
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("positionIndex ASC")
+    @OrderBy("orderIndex ASC")
     @Builder.Default
     private List<Step> steps = new ArrayList<>();
 }

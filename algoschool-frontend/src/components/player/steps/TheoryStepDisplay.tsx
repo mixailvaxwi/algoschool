@@ -17,7 +17,7 @@ export const TheoryStepDisplay: React.FC<Props> = ({ step, onSubmit, isLoading }
         if (res) setResult(res);
     };
 
-    const isAccepted = result?.status === 'ACCEPTED';
+    const isAccepted = result?.status === 'CORRECT';
 
     return (
         <div className="prose prose-slate max-w-none flex flex-col h-full">

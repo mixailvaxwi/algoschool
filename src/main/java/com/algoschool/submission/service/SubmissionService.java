@@ -107,14 +107,14 @@ public class SubmissionService {
             updateUserProgress(user, problem, request.getPayload());
         }
 
-        // --- МАППИНГ ДЛЯ ФРОНТЕНДА ---
-        // Фронтенд ждет статус 'ACCEPTED', а в базе он 'CORRECT'
-        String stringStatus = (status == SubmissionStatus.CORRECT) ? "ACCEPTED" : status.name();
+        // Один словарь вердиктов на оба эндпоинта: /submit и /submit/history
+        // отдают одно и то же имя статуса. Раньше первый возвращал ACCEPTED,
+        // а второй CORRECT для одного и того же исхода.
         String message = getMessageForStatus(status);
 
         return AssessmentResult.builder()
                 .submissionId(submission.getId())
-                .status(stringStatus)
+                .status(status.name())
                 .message(message)
                 .compilerOutput(submission.getCompilerOutput())
                 .testResultsJson(submission.getTestResultsJson())
@@ -272,7 +272,7 @@ public class SubmissionService {
                         sub.getProblem().getLesson().getModule().getCourse().getTitle(),
                         sub.getProblem().getLesson().getModule().getPositionIndex(),
                         sub.getProblem().getLesson().getOrderIndex(),
-                        sub.getProblem().getPositionIndex(),
+                        sub.getProblem().getOrderIndex(),
                         sub.getPayload(),
                         sub.getStatus(),
                         sub.getCreatedAt()

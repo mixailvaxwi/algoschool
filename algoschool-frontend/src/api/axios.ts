@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 export const apiClient = axios.create({
-    baseURL: 'http://localhost:8080/api',
+    // Адрес бэкенда берётся из окружения (.env), с локальным значением по умолчанию
+    baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api',
     headers: {
         'Content-Type': 'application/json'
     }

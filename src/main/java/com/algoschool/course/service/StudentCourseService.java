@@ -158,9 +158,18 @@ public class StudentCourseService {
                 .description(course.getDescription())
                 .accessType(course.getAccessType())
                 .authorName(course.getAuthor().getName() != null ? course.getAuthor().getName() : course.getAuthor().getUsername())
+                // Поле объявлено в DTO и отрисовывается в каталоге, но никогда
+                // не заполнялось — на карточках всегда было «null уроков».
+                .lessonsCount(countLessons(course))
                 .isEnrolled(isEnrolled)
                 .applicationStatus(appStatus) // <--- передаем статус
                 .build();
+    }
+
+    private int countLessons(Course course) {
+        return course.getModules().stream()
+                .mapToInt(module -> module.getLessons().size())
+                .sum();
     }
 
     @Transactional(readOnly = true)

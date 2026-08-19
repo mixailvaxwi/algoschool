@@ -27,9 +27,9 @@ export const Navbar = () => {
                 <nav className="hidden md:flex items-center gap-6 ml-10 font-medium text-slate-600">
                     <Link to="/teacher/courses" className="hover:text-blue-600 transition-colors">Кабинет преподавателя</Link>
                     <Link
-                        to="/my-courses" // Исправлено с /my-learning или заглушки на /my-courses
+                        to="/courses/enrolled"
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                            isActive('/my-courses') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-50'
+                            isActive('/courses/enrolled') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-50'
                         }`}
                     >
                         <BookOpen size={18} />
@@ -43,7 +43,7 @@ export const Navbar = () => {
         return (
             <nav className="hidden md:flex items-center gap-6 ml-10 font-medium text-slate-600">
                 <Link
-                    to="/courses/enrolled" // Исправлено с /my-learning или заглушки на /my-courses
+                    to="/courses/enrolled"
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
                         isActive('/courses/enrolled') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-50'
                     }`}

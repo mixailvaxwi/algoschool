@@ -66,7 +66,7 @@ public class StepServiceImpl implements StepService {
 
         // ВАЖНО: устанавливаем обязательные поля
         step.setLesson(lesson);
-        step.setPositionIndex(request.getPositionIndex());
+        step.setOrderIndex(request.getOrderIndex());
 
         return stepRepository.save(step);
     }

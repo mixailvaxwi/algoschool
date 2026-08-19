@@ -18,16 +18,15 @@ import lombok.*;
         @JsonSubTypes.Type(value = TheoryStep.class, name = "theory"),
         @JsonSubTypes.Type(value = CodeProblem.class, name = "code"),
         @JsonSubTypes.Type(value = TextProblem.class, name = "text"),
-        @JsonSubTypes.Type(value = ChoiceProblem.class, name = "choice"),
-        @JsonSubTypes.Type(value = FileProblem.class, name = "file")
+        @JsonSubTypes.Type(value = ChoiceProblem.class, name = "choice")
 })
 public abstract class Step {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "position_index", nullable = false)
-    private Integer positionIndex;
+    @Column(name = "order_index", nullable = false)
+    private Integer orderIndex;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lesson_id", nullable = false)

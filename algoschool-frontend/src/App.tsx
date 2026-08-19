@@ -5,7 +5,6 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { CoursePage } from './pages/CoursePage';
-import { LessonPage } from './pages/LessonPage';
 import { TeacherRoute } from './components/TeacherRoute';
 import { TeacherLayout } from './layouts/TeacherLayout';
 import { TeacherCoursesPage } from './pages/teacher/TeacherCoursesPage';
@@ -56,7 +55,6 @@ function App() {
                                     <Route path="/courses/enrolled" element={<ProtectedRoute><MyCoursesPage /></ProtectedRoute>} />
                                     <Route path="/courses/:courseId" element={<CoursePage />} />
                                     <Route path="/courses/:courseId/lessons/:lessonId" element={<LessonPlayerPage />} />
-                                    <Route path="/lessons/:lessonId" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
                                     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                                     <Route path="/users/:username" element={<ProtectedRoute><PublicProfilePage /></ProtectedRoute>} />
                                     <Route path="/my-applications" element={<ProtectedRoute><MyApplicationsPage /></ProtectedRoute>} />

@@ -36,7 +36,7 @@ export const StepRenderer: React.FC<StepRendererProps> = ({ step }) => {
             if (step.stepType === 'THEORY') {
                 await apiClient.post(`/courses/${courseId}/lessons/${lessonId}/steps/${step.id}/read`);
                 addCompletedStep(step.id);
-                return { status: 'ACCEPTED', message: 'Материал успешно изучен!' };
+                return { status: 'CORRECT', message: 'Материал успешно изучен!' };
             }
 
             const response = await apiClient.post<AssessmentResult>(
@@ -44,7 +44,7 @@ export const StepRenderer: React.FC<StepRendererProps> = ({ step }) => {
                 { payload: payload } // Отправляем payload
             );
 
-            if (response.data.status === 'ACCEPTED') {
+            if (response.data.status === 'CORRECT') {
                 addCompletedStep(step.id);
             }
 

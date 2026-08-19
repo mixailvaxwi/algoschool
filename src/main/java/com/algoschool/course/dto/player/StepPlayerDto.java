@@ -15,5 +15,5 @@ import lombok.Data;
 })
 public abstract class StepPlayerDto {
     private Long id;
-    private Integer positionIndex;
+    private Integer orderIndex;
 }

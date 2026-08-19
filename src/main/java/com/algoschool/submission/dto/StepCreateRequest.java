@@ -7,7 +7,7 @@ import java.util.List;
 public class StepCreateRequest {
     private String stepType;
 
-    private Integer positionIndex;
+    private Integer orderIndex;
 
     private String content;
 

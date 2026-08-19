@@ -12,7 +12,7 @@ export const LessonEditorPage = () => {
 
     // Состояния формы
     const [stepType, setStepType] = useState<StepType>('THEORY');
-    const [positionIndex, setPositionIndex] = useState<number>(1);
+    const [orderIndex, setOrderIndex] = useState<number>(1);
     const [content, setContent] = useState('');
     const [description, setDescription] = useState('');
 
@@ -45,7 +45,7 @@ export const LessonEditorPage = () => {
 
     const handleCreateStep = async () => {
         setIsLoading(true);
-        const payload: any = { stepType, positionIndex };
+        const payload: any = { stepType, orderIndex };
 
         // Собираем данные в зависимости от типа
         if (stepType === 'THEORY') {
@@ -74,7 +74,7 @@ export const LessonEditorPage = () => {
             alert('Шаг успешно создан!');
 
             // Авто-инкремент для следующего шага
-            setPositionIndex(prev => prev + 1);
+            setOrderIndex(prev => prev + 1);
 
             // Очищаем текстовые поля для нового шага
             setContent('');
@@ -122,8 +122,8 @@ export const LessonEditorPage = () => {
                             <input
                                 type="number"
                                 min="1"
-                                value={positionIndex}
-                                onChange={(e) => setPositionIndex(Number(e.target.value))}
+                                value={orderIndex}
+                                onChange={(e) => setOrderIndex(Number(e.target.value))}
                                 className="w-full p-3 pl-10 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>

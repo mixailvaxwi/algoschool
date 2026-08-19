@@ -44,7 +44,7 @@ export const CodeStepDisplay: React.FC<Props> = ({ step, onSubmit, isLoading }) 
         if (res) setResult(res);
     };
 
-    const isAccepted = result?.status === 'ACCEPTED';
+    const isAccepted = result?.status === 'CORRECT';
 
     return (
         <div className="space-y-6 flex flex-col h-full">

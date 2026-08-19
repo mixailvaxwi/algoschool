@@ -16,7 +16,7 @@ type StepType = 'THEORY' | 'INPUT_PROBLEM' | 'CHOICE_PROBLEM' | 'CODE_PROBLEM';
 export const CreateStepModal: React.FC<CreateStepModalProps> = ({ isOpen, onClose, courseId, lessonId, onSuccess }) => {
     // --- БАЗОВЫЕ ПОЛЯ ---
     const [stepType, setStepType] = useState<StepType>('THEORY');
-    const [positionIndex, setPositionIndex] = useState<number>(1);
+    const [orderIndex, setOrderIndex] = useState<number>(1);
 
     // --- СПЕЦИФИЧНЫЕ ПОЛЯ ---
     const [content, setContent] = useState(''); // Для THEORY
@@ -66,7 +66,7 @@ export const CreateStepModal: React.FC<CreateStepModalProps> = ({ isOpen, onClos
             // Формируем базовый payload (StepCreateRequest)
             const payload: any = {
                 stepType,
-                positionIndex: Number(positionIndex),
+                orderIndex: Number(orderIndex),
             };
 
             // Добавляем поля в зависимости от выбранного типа
@@ -143,8 +143,8 @@ export const CreateStepModal: React.FC<CreateStepModalProps> = ({ isOpen, onClos
                                 <input
                                     type="number"
                                     min="1"
-                                    value={positionIndex}
-                                    onChange={(e) => setPositionIndex(Number(e.target.value))}
+                                    value={orderIndex}
+                                    onChange={(e) => setOrderIndex(Number(e.target.value))}
                                     className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
                             </div>
