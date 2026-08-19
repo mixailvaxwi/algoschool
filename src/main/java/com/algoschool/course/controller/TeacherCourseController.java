@@ -3,6 +3,7 @@ package com.algoschool.course.controller;
 import com.algoschool.course.dto.TeacherCourseRequest;
 import com.algoschool.course.dto.teacher.CourseDto;
 import com.algoschool.course.service.TeacherCourseService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,7 +30,7 @@ public class TeacherCourseController {
     // Создать новый курс (черновик)
     @PostMapping
     public ResponseEntity<CourseDto> createCourse(
-            @RequestBody TeacherCourseRequest request,
+            @Valid @RequestBody TeacherCourseRequest request,
             @AuthenticationPrincipal UserDetails currentUser) {
         return ResponseEntity.ok(teacherCourseService.createCourse(request, currentUser.getUsername()));
     }
@@ -38,7 +39,7 @@ public class TeacherCourseController {
     @PutMapping("/{courseId}")
     public ResponseEntity<CourseDto> updateCourse(
             @PathVariable Long courseId,
-            @RequestBody TeacherCourseRequest request,
+            @Valid @RequestBody TeacherCourseRequest request,
             @AuthenticationPrincipal UserDetails currentUser) {
         return ResponseEntity.ok(teacherCourseService.updateCourse(courseId, request, currentUser.getUsername()));
     }

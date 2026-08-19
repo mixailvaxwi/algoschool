@@ -1,0 +1,9 @@
+# Локальная разработка.
+spring:
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    com.algoschool: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE   # значения параметров в SQL

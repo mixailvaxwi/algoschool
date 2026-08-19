@@ -2,6 +2,10 @@ spring:
   application:
     name: algoschool
 
+  # Профиль по умолчанию — dev. В проде: SPRING_PROFILES_ACTIVE=prod
+  profiles:
+    default: dev
+
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/algoschool?serverTimezone=UTC&characterEncoding=UTF-8}
     username: ${DB_USERNAME:root}
@@ -22,7 +26,15 @@ spring:
       # validate, а не update: Hibernate больше не правит схему молча,
       # он лишь сверяет её с сущностями и падает при расхождении.
       ddl-auto: validate
-    show-sql: true
+    # show-sql переопределяется профилями (в проде выключен)
+    show-sql: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    # Не отдаём наружу стектрейсы: ошибки описывает GlobalExceptionHandler
+    include-stacktrace: never
+    include-message: never
 
 # Секреты берутся из переменных окружения — см. .env.example.
 # У DB_PASSWORD и JWT_SECRET нет значений по умолчанию: без них приложение не стартует.

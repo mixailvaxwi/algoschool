@@ -3,6 +3,7 @@ package com.algoschool.course.controller;
 import com.algoschool.step.dto.StepCreateRequest;
 import com.algoschool.step.entity.Step;
 import com.algoschool.step.service.StepService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,7 +21,7 @@ public class TeacherStepController {
     public ResponseEntity<Step> createStep(
             @PathVariable Long courseId,
             @PathVariable Long lessonId,
-            @RequestBody StepCreateRequest request,
+            @Valid @RequestBody StepCreateRequest request,
             @AuthenticationPrincipal UserDetails currentUser) {
 
         Step createdStep = stepService.addStepToLesson(lessonId, request, currentUser.getUsername());

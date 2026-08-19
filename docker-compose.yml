@@ -1,0 +1,59 @@
+# Локальный стенд: MySQL + бэкенд + дев-сервер фронтенда.
+#
+#   cp .env.example .env   # заполнить DB_PASSWORD и JWT_SECRET
+#   docker compose up --build
+#
+# Фронтенд поднимается дев-сервером Vite, а не сборкой под nginx: так правки
+# видны сразу, и не нужно держать отдельный конфиг веб-сервера.
+
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?задайте DB_PASSWORD в .env}
+      MYSQL_DATABASE: algoschool
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      # Бэкенд стартует только после того, как база реально отвечает
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://db:3306/algoschool?serverTimezone=UTC&characterEncoding=UTF-8
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:?задайте DB_PASSWORD в .env}
+      JWT_SECRET: ${JWT_SECRET:?задайте JWT_SECRET в .env (openssl rand -base64 32)}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      # Без запущенного Ejudge опрос вердиктов лучше выключить
+      EJUDGE_POLLING_ENABLED: ${EJUDGE_POLLING_ENABLED:-false}
+      EJUDGE_BASE_URL: ${EJUDGE_BASE_URL:-http://localhost}
+      EJUDGE_API_KEY: ${EJUDGE_API_KEY:-}
+    ports:
+      - "8080:8080"
+
+  frontend:
+    image: node:22
+    working_dir: /app
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:8080/api
+    volumes:
+      - ./algoschool-frontend:/app
+      - /app/node_modules
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+
+volumes:
+  db-data:

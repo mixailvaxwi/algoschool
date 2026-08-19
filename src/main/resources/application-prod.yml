@@ -1,0 +1,13 @@
+# Продакшен.
+spring:
+  jpa:
+    # SQL в лог не пишем: шумно и утекают данные запросов
+    show-sql: false
+
+logging:
+  level:
+    root: INFO
+    com.algoschool: INFO
+  file:
+    name: ${LOG_FILE:/var/log/algoschool/application.log}
+

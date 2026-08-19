@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Бэкенд — сборка и тесты
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      # Интеграционные тесты сюда не входят: им нужна БД, они в отдельной работе
+      - name: mvn verify
+        run: ./mvnw -B verify
+
+  integration:
+    name: Интеграционные тесты (живая MySQL)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-password
+          MYSQL_DATABASE: algoschool
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pci-password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      # Профиль integration снимает исключение группы: поднимается полный
+      # контекст, Flyway накатывает миграции на чистую базу.
+      - name: mvn verify -Pintegration
+        env:
+          DB_URL: jdbc:mysql://127.0.0.1:3306/algoschool?serverTimezone=UTC&characterEncoding=UTF-8
+          DB_USERNAME: root
+          DB_PASSWORD: ci-password
+          JWT_SECRET: Y2ktb25seS1zZWNyZXQtbm90LXVzZWQtaW4tcHJvZHVjdGlvbiEh
+          EJUDGE_POLLING_ENABLED: 'false'
+        run: ./mvnw -B verify -Pintegration
+
+  frontend:
+    name: Фронтенд — сборка
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: algoschool-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: algoschool-frontend/package-lock.json
+
+      - run: npm ci
+      # npm run build выполняет tsc -b, то есть проверку типов, и затем сборку.
+      # npm run lint здесь сознательно не запускается: в коде 30 накопившихся
+      # ошибок eslint, и красный CI с первого дня никто читать не станет.
+      # Разбор этих ошибок — отдельная задача, после неё шаг можно добавить.
+      - run: npm run build
