@@ -6,7 +6,7 @@ import com.algoschool.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List; // <-- Убедитесь, что этот импорт есть
+import java.util.List;
 
 @Repository
 public interface UserCourseRepository extends JpaRepository<UserCourse, Long> {
@@ -15,7 +15,8 @@ public interface UserCourseRepository extends JpaRepository<UserCourse, Long> {
 
     boolean existsByUserIdAndCourseId(Long userId, Long courseId);
 
-    // --- ИСПРАВЛЕНИЕ ОШИБКИ: ДОБАВЛЯЕМ НОВЫЙ МЕТОД ---
-    // Возвращает список всех записей (UserCourse) для конкретного студента
     List<UserCourse> findAllByUserId(Long userId);
+
+    /** Снятие с курса при отзыве одобрения заявки. */
+    void deleteByUserIdAndCourseId(Long userId, Long courseId);
 }

@@ -1,6 +1,7 @@
 package com.algoschool.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -88,14 +89,23 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Bad Request", "Тело запроса некорректно или отсутствует");
     }
 
-    // 8. Некорректные аргументы, не покрытые валидацией.
+    // 8. Нарушение ограничений БД. Проверки «уже записан» делаются заранее, но
+    //    при гонке двух параллельных запросов барьером остаётся сама база —
+    //    и её отказ должен выглядеть как конфликт, а не как сбой сервера.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("Нарушение ограничения целостности: {}", ex.getMostSpecificCause().getMessage());
+        return build(HttpStatus.CONFLICT, "Conflict", "Это действие уже выполнено");
+    }
+
+    // 9. Некорректные аргументы, не покрытые валидацией.
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Некорректный аргумент запроса: {}", ex.getMessage());
         return build(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
     }
 
-    // 9. Всё непредвиденное. Наружу — обезличенный текст, в лог — полный стектрейс.
+    // 10. Всё непредвиденное. Наружу — обезличенный текст, в лог — полный стектрейс.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         log.error("Непредвиденная ошибка при обработке запроса", ex);

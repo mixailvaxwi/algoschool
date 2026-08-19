@@ -12,6 +12,7 @@ import com.algoschool.submission.dto.SubmissionRequest;
 import com.algoschool.submission.entity.Submission;
 import com.algoschool.submission.entity.SubmissionStatus;
 import com.algoschool.submission.entity.UserStepProgress;
+import com.algoschool.submission.repository.ProblemRepository;
 import com.algoschool.submission.repository.SubmissionRepository;
 import com.algoschool.submission.repository.UserStepProgressRepository;
 import com.algoschool.user.entity.User;
@@ -45,6 +46,7 @@ public class SubmissionService {
     private final List<StepChecker> checkers;
     private final EjudgeClient ejudgeClient;
     private final CourseAccessService courseAccess;
+    private final ProblemRepository problemRepository;
 
     @Transactional
     public AssessmentResult processSubmission(Long stepId, SubmissionRequest request, String username) {
@@ -60,6 +62,10 @@ public class SubmissionService {
         if (!(step instanceof Problem problem)) {
             throw AppException.badRequest("Этот шаг является теорией и не требует отправки решения");
         }
+
+        // Счётчик называется attempted_students_count — считаем людей, а не попытки,
+        // поэтому проверяем наличие прежних решений ДО сохранения текущего.
+        boolean firstAttempt = !submissionRepository.existsByUserIdAndProblemId(user.getId(), problem.getId());
 
         StepChecker activeChecker = checkers.stream()
                 .filter(checker -> checker.supports(problem))
@@ -92,6 +98,10 @@ public class SubmissionService {
         }
 
         submissionRepository.save(submission);
+
+        if (firstAttempt) {
+            problemRepository.incrementAttemptedCount(problem.getId());
+        }
 
         if (status == SubmissionStatus.CORRECT) {
             updateUserProgress(user, problem, request.getPayload());
@@ -183,24 +193,31 @@ public class SubmissionService {
 
     // ... метод updateUserProgress остается без изменений ...
     private void updateUserProgress(User user, Problem problem, String payload) {
-        // Ищем, есть ли уже запись о прогрессе для этого шага
-        UserStepProgress progress = progressRepository.findByUserAndStep(user, problem)
-                .orElse(UserStepProgress.builder()
-                        .user(user)
-                        .step(problem)
-                        .build());
+        UserStepProgress progress = progressRepository.findByUserAndStep(user, problem).orElse(null);
 
-        // Обновляем данные
+        // Успех засчитывается только в первый раз: раньше счётчик рос при каждом
+        // верном решении, и повторная отправка того же ответа накручивала статистику.
+        boolean firstSuccess = (progress == null) || !progress.isCompleted();
+
+        if (progress == null) {
+            progress = UserStepProgress.builder()
+                    .user(user)
+                    .step(problem)
+                    .build();
+        }
+
         progress.setCompleted(true);
         progress.setSubmittedPayload(payload);
         progress.setCompletedAt(LocalDateTime.now());
-
         progressRepository.save(progress);
 
-        // Здесь же можно обновить статистику самой задачи:
-        problem.setSuccessStudentsCount(problem.getSuccessStudentsCount() + 1);
-        stepRepository.save(problem);
+        if (firstSuccess) {
+            // Атомарный UPDATE вместо чтения-записи через сущность: параллельные
+            // отправки больше не затирают инкремент друг друга.
+            problemRepository.incrementSuccessCount(problem.getId());
+        }
     }
+
 
     @Transactional(readOnly = true)
     public List<SubmissionHistoryDto> getStudentHistory(Long stepId, String username) {

@@ -6,7 +6,7 @@ import { AxiosError } from 'axios';
 interface CourseApplicationModalProps {
     isOpen: boolean;
     onClose: () => void;
-    courseld: number;
+    courseId: number;
     courseTitle: string;
     onSuccess: () => void;
 }
@@ -14,7 +14,7 @@ interface CourseApplicationModalProps {
 export const CourseApplicationModal = ({
                                            isOpen,
                                            onClose,
-                                           courseld,
+                                           courseId,
                                            courseTitle,
                                            onSuccess
                                        }: CourseApplicationModalProps) => {
@@ -30,8 +30,9 @@ export const CourseApplicationModal = ({
         setError('');
 
         try {
-            await apiClient.post(`/courses/${courseld}/apply`, {
-                message: message.trim()
+            // Единая точка входа: для закрытого курса сервер сам создаёт заявку
+            await apiClient.post(`/courses/${courseId}/enroll`, {
+                motivationMessage: message.trim()
             });
             setMessage('');
             onSuccess();

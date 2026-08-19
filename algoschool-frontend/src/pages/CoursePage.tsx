@@ -176,7 +176,7 @@ export const CoursePage = () => {
             <CourseApplicationModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                courseld={Number(courseId)}
+                courseId={Number(courseId)}
                 courseTitle={course.title}
                 onSuccess={() => {
                     // Обновляем статус, чтобы кнопка стала серой

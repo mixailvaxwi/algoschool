@@ -56,12 +56,12 @@ public class TeacherApplicationService {
             throw AppException.forbidden("Нет прав на изменение этой заявки");
         }
 
-        // Меняем статус
+        ApplicationStatus previousStatus = application.getStatus();
         application.setStatus(newStatus);
         applicationRepository.save(application);
 
-        // САМОЕ ВАЖНОЕ: Если одобрили - зачисляем на курс
         if (newStatus == ApplicationStatus.APPROVED) {
+            // Одобрили — зачисляем
             boolean alreadyEnrolled = userCourseRepository.existsByUserAndCourse(application.getStudent(), application.getCourse());
             if (!alreadyEnrolled) {
                 UserCourse enrollment = UserCourse.builder()
@@ -70,6 +70,11 @@ public class TeacherApplicationService {
                         .build();
                 userCourseRepository.save(enrollment);
             }
+        } else if (previousStatus == ApplicationStatus.APPROVED) {
+            // Одобрение отозвали — снимаем с курса. Раньше статус менялся,
+            // а доступ у студента оставался навсегда.
+            userCourseRepository.deleteByUserIdAndCourseId(
+                    application.getStudent().getId(), application.getCourse().getId());
         }
     }
 
