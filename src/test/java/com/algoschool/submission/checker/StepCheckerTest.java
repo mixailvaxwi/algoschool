@@ -8,6 +8,7 @@ import com.algoschool.submission.entity.SubmissionStatus;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,10 +24,11 @@ class StepCheckerTest {
         return p;
     }
 
-    private ChoiceProblem choiceProblem(int correctIndex) {
+    private ChoiceProblem choiceProblem(Integer... correctIndexes) {
         ChoiceProblem p = new ChoiceProblem();
         p.setOptions(List.of("a", "b", "c"));
-        p.setCorrectOptionIndex(correctIndex);
+        p.setCorrectOptionIndexes(Set.of(correctIndexes));
+        p.setMultipleChoice(correctIndexes.length > 1);
         return p;
     }
 
@@ -58,6 +60,26 @@ class StepCheckerTest {
     @Test
     void choiceCheckerTreatsNonNumericPayloadAsWrongAnswer() {
         assertThat(choiceChecker.check(choiceProblem(1), "не число")).isEqualTo(SubmissionStatus.WRONG_ANSWER);
+    }
+
+    @Test
+    void choiceCheckerAcceptsFullMultipleChoiceMatch() {
+        assertThat(choiceChecker.check(choiceProblem(0, 2), "2,0")).isEqualTo(SubmissionStatus.CORRECT);
+    }
+
+    @Test
+    void choiceCheckerRejectsPartialMultipleChoiceMatch() {
+        assertThat(choiceChecker.check(choiceProblem(0, 2), "0")).isEqualTo(SubmissionStatus.WRONG_ANSWER);
+    }
+
+    @Test
+    void choiceCheckerRejectsMultipleChoiceWithExtraOption() {
+        assertThat(choiceChecker.check(choiceProblem(0, 2), "0,1,2")).isEqualTo(SubmissionStatus.WRONG_ANSWER);
+    }
+
+    @Test
+    void choiceCheckerRejectsBlankPayload() {
+        assertThat(choiceChecker.check(choiceProblem(1), " ")).isEqualTo(SubmissionStatus.WRONG_ANSWER);
     }
 
     @Test

@@ -1,5 +1,7 @@
 package com.algoschool.config;
 
+import com.algoschool.admin.controller.AdminUserController;
+import com.algoschool.admin.service.AdminUserService;
 import com.algoschool.auth.service.JwtService;
 import com.algoschool.course.controller.StudentCourseController;
 import com.algoschool.course.controller.TeacherCourseController;
@@ -34,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * ни с одним правилом и доставался любому авторизованному пользователю,
  * а неаутентифицированный запрос получал 403 вместо 401.
  */
-@WebMvcTest(controllers = {TeacherCourseController.class, StudentCourseController.class, UserController.class})
+@WebMvcTest(controllers = {TeacherCourseController.class, StudentCourseController.class, UserController.class, AdminUserController.class})
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, SecurityErrorWriter.class,
         RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class, GlobalExceptionHandler.class})
 class SecurityMatrixTest {
@@ -47,6 +49,7 @@ class SecurityMatrixTest {
     @MockitoBean private TeacherCourseService teacherCourseService;
     @MockitoBean private StudentCourseService studentCourseService;
     @MockitoBean private UserService userService;
+    @MockitoBean private AdminUserService adminUserService;
 
     // --- Публичная витрина -------------------------------------------------
 
@@ -78,6 +81,27 @@ class SecurityMatrixTest {
     @WithAnonymousUser
     void anonymousGetsUnauthorizedOnTeacherArea() throws Exception {
         mvc.perform(get("/api/teacher/courses")).andExpect(status().isUnauthorized());
+    }
+
+    // --- Панель администратора -----------------------------------------------
+
+    @Test
+    @WithMockUser(username = "teacher1", roles = "TEACHER")
+    void teacherIsForbiddenFromAdminArea() throws Exception {
+        mvc.perform(get("/api/admin/users")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "admin1", roles = "ADMIN")
+    void adminReachesAdminArea() throws Exception {
+        when(adminUserService.searchUsers(any())).thenReturn(List.of());
+        mvc.perform(get("/api/admin/users")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void anonymousGetsUnauthorizedOnAdminArea() throws Exception {
+        mvc.perform(get("/api/admin/users")).andExpect(status().isUnauthorized());
     }
 
     // --- Личные данные ------------------------------------------------------

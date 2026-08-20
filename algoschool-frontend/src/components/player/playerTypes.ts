@@ -31,6 +31,10 @@ export interface ChoiceProblemStep extends BaseProblemStep {
     options: string[];
 }
 
+// Одиночный выбор — payload "2"; множественный — "0,2" (без пробелов, порядок неважен).
+export const buildChoicePayload = (selected: Set<number>): string =>
+    [...selected].sort((a, b) => a - b).join(',');
+
 export type AnyStep = TheoryStep | CodeProblemStep | InputProblemStep | ChoiceProblemStep;
 
 export interface FullLesson {

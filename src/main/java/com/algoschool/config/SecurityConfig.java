@@ -50,6 +50,9 @@ public class SecurityConfig {
                     // --- Кабинет преподавателя ---
                     .requestMatchers("/api/teacher/**").hasRole("TEACHER")
 
+                    // --- Панель администратора ---
+                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                     // --- Всё остальное ---
                     .anyRequest().authenticated()
             )

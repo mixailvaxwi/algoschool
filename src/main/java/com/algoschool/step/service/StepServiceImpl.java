@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -104,10 +105,20 @@ public class StepServiceImpl implements StepService {
             input.setDescription(request.getDescription());
             input.setCorrectAnswer(request.getCorrectAnswer());
         } else if (step instanceof ChoiceProblem choice) {
+            boolean multiple = request.getIsMultipleChoice() != null && request.getIsMultipleChoice();
+            List<Integer> correctIndexes = request.getCorrectOptionIndexes();
+
+            if (correctIndexes == null || correctIndexes.isEmpty()) {
+                throw AppException.badRequest("Нужно отметить хотя бы один правильный вариант");
+            }
+            if (!multiple && correctIndexes.size() > 1) {
+                throw AppException.badRequest("Для одиночного выбора можно отметить только один правильный вариант");
+            }
+
             choice.setDescription(request.getDescription());
             choice.setOptions(request.getOptions());
-            choice.setCorrectOptionIndex(request.getCorrectOptionIndex());
-            choice.setMultipleChoice(request.getIsMultipleChoice() != null ? request.getIsMultipleChoice() : false);
+            choice.setCorrectOptionIndexes(new HashSet<>(correctIndexes));
+            choice.setMultipleChoice(multiple);
         } else if (step instanceof CodeProblem code) {
             code.setDescription(request.getDescription());
             code.setTimeLimit(request.getTimeLimitSec());
@@ -137,9 +148,12 @@ public class StepServiceImpl implements StepService {
         } else if (step instanceof TextProblem input) {
             dto.description(input.getDescription()).correctAnswer(input.getCorrectAnswer());
         } else if (step instanceof ChoiceProblem choice) {
+            List<Integer> sortedCorrectIndexes = choice.getCorrectOptionIndexes() == null
+                    ? List.of()
+                    : choice.getCorrectOptionIndexes().stream().sorted().toList();
             dto.description(choice.getDescription())
                     .options(choice.getOptions())
-                    .correctOptionIndex(choice.getCorrectOptionIndex())
+                    .correctOptionIndexes(sortedCorrectIndexes)
                     .isMultipleChoice(choice.isMultipleChoice());
         } else if (step instanceof CodeProblem code) {
             dto.description(code.getDescription())

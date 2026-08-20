@@ -6,7 +6,10 @@ import { RegisterPage } from './pages/auth/RegisterPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { CoursePage } from './pages/CoursePage';
 import { TeacherRoute } from './components/TeacherRoute';
+import { AdminRoute } from './components/AdminRoute';
 import { TeacherLayout } from './layouts/TeacherLayout';
+import { AdminLayout } from './layouts/AdminLayout';
+import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { TeacherCoursesPage } from './pages/teacher/TeacherCoursesPage';
 import { TeacherCourseEditorPage } from './pages/teacher/TeacherCourseEditorPage';
 import { LessonEditorPage } from './pages/teacher/LessonEditorPage';
@@ -41,6 +44,13 @@ function App() {
                         <Route path="courses/:courseId/applications" element={<TeacherApplicationsPage />} />
                         <Route path="submissions" element={<TeacherSubmissionsPage />} />
                         <Route path="users" element={<div>Страница пользователей (в разработке)</div>} />
+                    </Route>
+                </Route>
+
+                <Route path="/admin" element={<AdminRoute />}>
+                    <Route element={<AdminLayout />}>
+                        <Route index element={<Navigate to="users" replace />} />
+                        <Route path="users" element={<AdminUsersPage />} />
                     </Route>
                 </Route>
 

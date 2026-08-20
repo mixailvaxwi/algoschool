@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import {User, LogOut, Inbox, BookOpen} from 'lucide-react';
+import {User, LogOut, Inbox, BookOpen, ShieldCheck} from 'lucide-react';
 
 export const Navbar = () => {
     const navigate = useNavigate();
@@ -21,6 +21,23 @@ export const Navbar = () => {
         if (!isAuthenticated) return null;
 
         const currentRole = user?.role?.toUpperCase() || '';
+
+        if (currentRole.includes('ROLE_ADMIN')) {
+            return (
+                <nav className="hidden md:flex items-center gap-6 ml-10 font-medium text-slate-600">
+                    <Link
+                        to="/admin/users"
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                            isActive('/admin') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-50'
+                        }`}
+                    >
+                        <ShieldCheck size={18} />
+                        <span className="font-medium">Панель администратора</span>
+                    </Link>
+                    <Link to="/courses" className="hover:text-blue-600 transition-colors">Каталог</Link>
+                </nav>
+            );
+        }
 
         if (currentRole.includes('ROLE_TEACHER')) {
             return (

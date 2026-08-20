@@ -92,7 +92,7 @@ public class StudentLessonService {
             dto.setOrderIndex(choice.getOrderIndex());
             dto.setDescription(choice.getDescription());
             dto.setOptions(choice.getOptions());
-            dto.setMultipleChoice(choice.isMultipleChoice());
+            dto.setIsMultipleChoice(choice.isMultipleChoice());
             return dto;
         }
         throw new IllegalArgumentException("Неизвестный тип шага: " + step.getClass().getSimpleName());

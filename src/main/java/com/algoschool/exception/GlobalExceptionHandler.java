@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -50,7 +51,14 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNAUTHORIZED, "Unauthorized", "Неверный логин или пароль");
     }
 
-    // 4. Прочие сбои аутентификации (заблокирован, отключён и т.д.)
+    // 3а. Аккаунт заблокирован администратором (UC-A-03) — сообщение конкретнее,
+    //     чем общее «требуется вход».
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<ErrorResponse> handleLocked(LockedException ex) {
+        return build(HttpStatus.UNAUTHORIZED, "Unauthorized", "Аккаунт заблокирован");
+    }
+
+    // 4. Прочие сбои аутентификации (отключён и т.д.)
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException ex) {
         return build(HttpStatus.UNAUTHORIZED, "Unauthorized", "Требуется вход в систему");

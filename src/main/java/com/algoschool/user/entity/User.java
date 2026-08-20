@@ -40,6 +40,12 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role;
 
+    // Блокировка администратором (UC-A-03). Значение по умолчанию задаётся
+    // на уровне колонки миграцией V6, здесь — для сборки через билдер в коде.
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean locked = false;
+
     // --- МЕТОДЫ ИНТЕРФЕЙСА UserDetails (Spring Security) ---
 
     @Override
@@ -68,8 +74,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        // Можно реализовать логику бана пользователя
-        return true;
+        return !locked;
     }
 
     @Override

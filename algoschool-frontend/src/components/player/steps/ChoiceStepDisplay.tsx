@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { ChoiceProblemStep } from '../playerTypes';
+import { buildChoicePayload, type ChoiceProblemStep } from '../playerTypes';
 import { CheckSquare, Send, CheckCircle, XCircle } from 'lucide-react';
 import type { AssessmentResult } from '../StepRenderer';
 
@@ -10,13 +10,25 @@ interface Props {
 }
 
 export const ChoiceStepDisplay: React.FC<Props> = ({ step, onSubmit, isLoading }) => {
-    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+    const [selected, setSelected] = useState<Set<number>>(new Set());
     const [result, setResult] = useState<AssessmentResult | null>(null);
 
+    const toggleOption = (index: number) => {
+        setSelected((prev) => {
+            const next = step.isMultipleChoice ? new Set(prev) : new Set<number>();
+            if (next.has(index)) {
+                next.delete(index);
+            } else {
+                next.add(index);
+            }
+            return next;
+        });
+    };
+
     const handleSubmit = async () => {
-        if (selectedIndex === null) return;
+        if (selected.size === 0) return;
         setResult(null);
-        const res = await onSubmit(selectedIndex.toString());
+        const res = await onSubmit(buildChoicePayload(selected));
         if (res) setResult(res);
     };
 
@@ -26,7 +38,9 @@ export const ChoiceStepDisplay: React.FC<Props> = ({ step, onSubmit, isLoading }
         <div className="space-y-6 flex flex-col h-full">
             <div className="flex items-center gap-3 text-blue-600 mb-6 pb-4 border-b border-slate-100 shrink-0">
                 <CheckSquare size={28} />
-                <h1 className="m-0 text-3xl font-bold text-slate-900">Выберите правильный ответ</h1>
+                <h1 className="m-0 text-3xl font-bold text-slate-900">
+                    {step.isMultipleChoice ? 'Выберите все правильные ответы' : 'Выберите правильный ответ'}
+                </h1>
             </div>
             <div className="text-slate-700 whitespace-pre-wrap leading-relaxed text-lg mb-4">
                 {step.description}
@@ -38,19 +52,19 @@ export const ChoiceStepDisplay: React.FC<Props> = ({ step, onSubmit, isLoading }
                         className={`flex items-center gap-4 p-4 border-2 rounded-xl transition-all ${
                             isAccepted ? 'cursor-default opacity-80' : 'cursor-pointer hover:border-blue-300 hover:bg-slate-50'
                         } ${
-                            selectedIndex === index ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-slate-200'
+                            selected.has(index) ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-slate-200'
                         }`}
                     >
                         <input
-                            type="radio"
+                            type={step.isMultipleChoice ? 'checkbox' : 'radio'}
                             name={`choice-${step.id}`}
                             value={index}
-                            checked={selectedIndex === index}
-                            onChange={() => !isAccepted && setSelectedIndex(index)}
+                            checked={selected.has(index)}
+                            onChange={() => !isAccepted && toggleOption(index)}
                             disabled={isLoading || isAccepted}
                             className="w-5 h-5 text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer disabled:cursor-default"
                         />
-                        <span className={`text-lg ${selectedIndex === index ? 'text-blue-900 font-medium' : 'text-slate-700'}`}>
+                        <span className={`text-lg ${selected.has(index) ? 'text-blue-900 font-medium' : 'text-slate-700'}`}>
                             {option}
                         </span>
                     </label>
@@ -70,7 +84,7 @@ export const ChoiceStepDisplay: React.FC<Props> = ({ step, onSubmit, isLoading }
                 )}
                 <button
                     onClick={handleSubmit}
-                    disabled={selectedIndex === null || isLoading || isAccepted}
+                    disabled={selected.size === 0 || isLoading || isAccepted}
                     className="w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                     {isLoading ? 'Проверяем...' : <><Send size={20} /> Отправить решение</>}

@@ -24,7 +24,7 @@ public class StepTeacherDto {
 
     // --- CHOICE_PROBLEM ---
     private List<String> options;
-    private Integer correctOptionIndex;
+    private List<Integer> correctOptionIndexes;
     private Boolean isMultipleChoice;
 
     // --- INPUT_PROBLEM ---

@@ -12,7 +12,7 @@ interface StepDto {
     content?: string;
     description?: string;
     options?: string[];
-    correctOptionIndex?: number;
+    correctOptionIndexes?: number[];
     isMultipleChoice?: boolean;
     correctAnswer?: string;
     timeLimitSec?: number;
@@ -50,7 +50,7 @@ export const LessonEditorPage = () => {
     // Специфичные состояния
     const [correctAnswer, setCorrectAnswer] = useState('');
     const [options, setOptions] = useState<string[]>(['Вариант 1', 'Вариант 2']);
-    const [correctOptionIndex, setCorrectOptionIndex] = useState<number>(0);
+    const [correctOptionIndexes, setCorrectOptionIndexes] = useState<number[]>([0]);
     const [isMultipleChoice, setIsMultipleChoice] = useState(false);
     const [timeLimit, setTimeLimit] = useState<number>(2);
     const [memoryLimit, setMemoryLimit] = useState<number>(256);
@@ -87,8 +87,32 @@ export const LessonEditorPage = () => {
         if (options.length <= 2) return; // Меньше 2 вариантов оставлять нельзя
         const newOptions = options.filter((_, i) => i !== index);
         setOptions(newOptions);
-        if (correctOptionIndex === index) setCorrectOptionIndex(0);
-        else if (correctOptionIndex > index) setCorrectOptionIndex(correctOptionIndex - 1);
+
+        // Сдвигаем индексы правильных ответов вслед за удалённым вариантом;
+        // если удалили единственный правильный — подставляем первый по умолчанию.
+        const shifted = correctOptionIndexes
+            .filter(i => i !== index)
+            .map(i => (i > index ? i - 1 : i));
+        setCorrectOptionIndexes(shifted.length > 0 ? shifted : [0]);
+    };
+
+    const toggleCorrectOption = (index: number) => {
+        if (isMultipleChoice) {
+            setCorrectOptionIndexes(prev =>
+                prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+            );
+        } else {
+            setCorrectOptionIndexes([index]);
+        }
+    };
+
+    // Переключение обратно на одиночный выбор с несколькими отмеченными
+    // вариантами оставило бы форму в состоянии, которое отклонит сервер.
+    const handleMultipleChoiceToggle = (checked: boolean) => {
+        setIsMultipleChoice(checked);
+        if (!checked && correctOptionIndexes.length > 1) {
+            setCorrectOptionIndexes([correctOptionIndexes[0]]);
+        }
     };
 
     const resetForm = (nextOrderIndex: number) => {
@@ -99,7 +123,7 @@ export const LessonEditorPage = () => {
         setDescription('');
         setCorrectAnswer('');
         setOptions(['Вариант 1', 'Вариант 2']);
-        setCorrectOptionIndex(0);
+        setCorrectOptionIndexes([0]);
         setIsMultipleChoice(false);
         setTimeLimit(2);
         setMemoryLimit(256);
@@ -116,7 +140,7 @@ export const LessonEditorPage = () => {
         setDescription(step.description ?? '');
         setCorrectAnswer(step.correctAnswer ?? '');
         setOptions(step.options && step.options.length > 0 ? step.options : ['Вариант 1', 'Вариант 2']);
-        setCorrectOptionIndex(step.correctOptionIndex ?? 0);
+        setCorrectOptionIndexes(step.correctOptionIndexes && step.correctOptionIndexes.length > 0 ? step.correctOptionIndexes : [0]);
         setIsMultipleChoice(step.isMultipleChoice ?? false);
         setTimeLimit(step.timeLimitSec ?? 2);
         setMemoryLimit(step.memoryLimitMb ?? 256);
@@ -155,7 +179,7 @@ export const LessonEditorPage = () => {
             }
             if (stepType === 'CHOICE_PROBLEM') {
                 payload.options = options.filter(opt => opt.trim() !== ''); // Убираем пустые
-                payload.correctOptionIndex = correctOptionIndex;
+                payload.correctOptionIndexes = correctOptionIndexes;
                 payload.isMultipleChoice = isMultipleChoice;
             }
             if (stepType === 'CODE_PROBLEM') {
@@ -331,15 +355,26 @@ export const LessonEditorPage = () => {
                 {/* 2. Блок для CHOICE_PROBLEM */}
                 {stepType === 'CHOICE_PROBLEM' && (
                     <div className="mb-6 p-6 bg-slate-50 rounded-xl border border-slate-200">
-                        <label className="block text-sm font-semibold text-slate-700 mb-4">Варианты ответа (отметьте правильный)</label>
+                        <label className="flex items-center gap-3 mb-6 cursor-pointer w-fit">
+                            <input
+                                type="checkbox"
+                                checked={isMultipleChoice}
+                                onChange={(e) => handleMultipleChoiceToggle(e.target.checked)}
+                                className="w-5 h-5 text-blue-600 focus:ring-blue-500 cursor-pointer rounded"
+                            />
+                            <span className="text-sm font-semibold text-slate-700">Несколько правильных ответов</span>
+                        </label>
+                        <label className="block text-sm font-semibold text-slate-700 mb-4">
+                            {isMultipleChoice ? 'Варианты ответа (отметьте все правильные)' : 'Варианты ответа (отметьте правильный)'}
+                        </label>
                         <div className="space-y-3">
                             {options.map((opt, index) => (
                                 <div key={index} className="flex items-center gap-3 bg-white p-2 rounded-lg border border-slate-200">
                                     <input
-                                        type="radio"
+                                        type={isMultipleChoice ? 'checkbox' : 'radio'}
                                         name="correctOption"
-                                        checked={correctOptionIndex === index}
-                                        onChange={() => setCorrectOptionIndex(index)}
+                                        checked={correctOptionIndexes.includes(index)}
+                                        onChange={() => toggleCorrectOption(index)}
                                         className="w-5 h-5 ml-2 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                     />
                                     <input

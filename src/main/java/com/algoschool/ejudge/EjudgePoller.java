@@ -5,6 +5,7 @@ import com.algoschool.submission.dto.PendingRun;
 import com.algoschool.submission.service.SubmissionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -26,9 +27,9 @@ import java.util.List;
  * Вторая: опрос выключается одним свойством. Без Ejudge он раньше писал ошибку
  * в лог каждые три секунды.
  * <p>
- * ВНИМАНИЕ: блокировки между экземплярами приложения нет. Перед запуском больше
- * чем одного инстанса опрос нужно либо оставить включённым ровно на одном, либо
- * добавить ShedLock — иначе все инстансы будут опрашивать одни и те же решения.
+ * Опрос защищён {@code @SchedulerLock} (см. ShedLockConfig): если поднято
+ * несколько инстансов приложения, круг опроса выполнит только тот, кто
+ * первым взял блокировку в таблице {@code shedlock}, а не каждый инстанс сразу.
  */
 @Slf4j
 @Component
@@ -40,6 +41,7 @@ public class EjudgePoller {
     private final EjudgeClient ejudgeClient;
 
     @Scheduled(fixedDelayString = "${ejudge.polling.interval-ms:3000}")
+    @SchedulerLock(name = "ejudge-poll-pending-runs", lockAtMostFor = "PT2M", lockAtLeastFor = "PT2S")
     public void pollPendingRuns() {
         List<PendingRun> pending = submissionService.findPendingRuns();
         if (pending.isEmpty()) {

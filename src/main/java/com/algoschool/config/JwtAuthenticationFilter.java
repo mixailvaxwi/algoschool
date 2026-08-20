@@ -53,6 +53,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
+                // Перечитывается из БД на каждый запрос, поэтому блокировка
+                // администратором обрывает уже выданный токен сразу, а не ждёт
+                // его истечения — иначе заблокированный аккаунт продолжал бы
+                // работать до конца срока действия JWT.
+                if (!userDetails.isAccountNonLocked()) {
+                    SecurityContextHolder.clearContext();
+                    errorWriter.write(response, HttpStatus.UNAUTHORIZED, "Аккаунт заблокирован");
+                    return;
+                }
+
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
