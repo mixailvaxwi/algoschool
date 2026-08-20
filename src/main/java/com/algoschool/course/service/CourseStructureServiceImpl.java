@@ -85,4 +85,54 @@ public class CourseStructureServiceImpl implements CourseStructureService {
 
         return lessonRepository.save(lesson);
     }
+
+    @Override
+    @Transactional
+    public Module updateModule(Long moduleId, TeacherModuleRequest request, String username) {
+        courseAccess.requireAuthorOfModule(moduleId, username);
+
+        Module module = moduleRepository.findById(moduleId)
+                .orElseThrow(() -> com.algoschool.exception.AppException.notFound("Модуль не найден"));
+
+        module.setTitle(request.title());
+        module.setPositionIndex(request.orderIndex());
+
+        return moduleRepository.save(module);
+    }
+
+    @Override
+    @Transactional
+    public void deleteModule(Long moduleId, String username) {
+        courseAccess.requireAuthorOfModule(moduleId, username);
+
+        Module module = moduleRepository.findById(moduleId)
+                .orElseThrow(() -> com.algoschool.exception.AppException.notFound("Модуль не найден"));
+
+        moduleRepository.delete(module);
+    }
+
+    @Override
+    @Transactional
+    public Lesson updateLesson(Long lessonId, TeacherLessonRequest request, String username) {
+        courseAccess.requireAuthorOfLesson(lessonId, username);
+
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> com.algoschool.exception.AppException.notFound("Урок не найден"));
+
+        lesson.setTitle(request.title());
+        lesson.setOrderIndex(request.orderIndex());
+
+        return lessonRepository.save(lesson);
+    }
+
+    @Override
+    @Transactional
+    public void deleteLesson(Long lessonId, String username) {
+        courseAccess.requireAuthorOfLesson(lessonId, username);
+
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> com.algoschool.exception.AppException.notFound("Урок не найден"));
+
+        lessonRepository.delete(lesson);
+    }
 }

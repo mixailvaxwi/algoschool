@@ -103,6 +103,14 @@ public class CourseAccessService {
         return requireAuthor(courseId, username);
     }
 
+    /** Автор курса, которому принадлежит шаг. */
+    @Transactional(readOnly = true)
+    public Course requireAuthorOfStep(Long stepId, String username) {
+        Long courseId = stepRepository.findCourseIdByStepId(stepId)
+                .orElseThrow(() -> AppException.notFound("Шаг не найден"));
+        return requireAuthor(courseId, username);
+    }
+
     /** Зачисление на курс, которому принадлежит шаг (отправка решения, отметка о прочтении). */
     @Transactional(readOnly = true)
     public Course requireEnrolledForStep(Long stepId, String username) {

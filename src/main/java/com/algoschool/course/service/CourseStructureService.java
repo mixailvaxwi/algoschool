@@ -20,4 +20,10 @@ public interface CourseStructureService {
     List<CourseStructureResponse> getCourseStructure(Long courseId, String username);
     Module addModule(Long courseId, TeacherModuleRequest request, String username);
     Lesson addLesson(Long moduleId, TeacherLessonRequest request, String username);
+
+    Module updateModule(Long moduleId, TeacherModuleRequest request, String username);
+    void deleteModule(Long moduleId, String username);
+
+    Lesson updateLesson(Long lessonId, TeacherLessonRequest request, String username);
+    void deleteLesson(Long lessonId, String username);
 }

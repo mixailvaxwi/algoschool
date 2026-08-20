@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Folder, FileText, X, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Folder, FileText, X, Save, Pencil, Trash2, ListTree } from 'lucide-react';
 import { apiClient } from '../../api/axios';
 
 // Типы, соответствующие нашему CourseStructureResponse с бэкенда
@@ -17,6 +17,8 @@ interface Module {
     lessons: Lesson[];
 }
 
+type ModalType = 'MODULE' | 'LESSON' | 'EDIT_MODULE' | 'EDIT_LESSON';
+
 export const TeacherCourseEditorPage = () => {
     const { courseId } = useParams<{ courseId: string }>();
     const navigate = useNavigate();
@@ -26,8 +28,9 @@ export const TeacherCourseEditorPage = () => {
 
     // Состояния для универсального модального окна
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<'MODULE' | 'LESSON'>('MODULE');
+    const [modalType, setModalType] = useState<ModalType>('MODULE');
     const [activeModuleId, setActiveModuleId] = useState<number | null>(null);
+    const [editItemId, setEditItemId] = useState<number | null>(null);
 
     // Данные формы
     const [newItemTitle, setNewItemTitle] = useState('');
@@ -57,20 +60,40 @@ export const TeacherCourseEditorPage = () => {
         fetchStructure();
     }, [courseId]);
 
-    // Открытие модалки для модуля
+    // Открытие модалки для создания модуля
     const openModuleModal = () => {
         setModalType('MODULE');
+        setEditItemId(null);
         setNewItemTitle('');
         setNewItemOrder(modules.length + 1); // Автоматически предлагаем следующий номер
         setIsModalOpen(true);
     };
 
-    // Открытие модалки для урока
+    // Открытие модалки для создания урока
     const openLessonModal = (moduleId: number, currentLessonsCount: number) => {
         setModalType('LESSON');
+        setEditItemId(null);
         setActiveModuleId(moduleId);
         setNewItemTitle('');
         setNewItemOrder(currentLessonsCount + 1);
+        setIsModalOpen(true);
+    };
+
+    // Открытие модалки для редактирования модуля
+    const openEditModuleModal = (module: Module) => {
+        setModalType('EDIT_MODULE');
+        setEditItemId(module.id);
+        setNewItemTitle(module.title);
+        setNewItemOrder(module.orderIndex);
+        setIsModalOpen(true);
+    };
+
+    // Открытие модалки для редактирования урока
+    const openEditLessonModal = (lesson: Lesson) => {
+        setModalType('EDIT_LESSON');
+        setEditItemId(lesson.id);
+        setNewItemTitle(lesson.title);
+        setNewItemOrder(lesson.orderIndex);
         setIsModalOpen(true);
     };
 
@@ -90,6 +113,16 @@ export const TeacherCourseEditorPage = () => {
                     title: newItemTitle,
                     orderIndex: newItemOrder
                 });
+            } else if (modalType === 'EDIT_MODULE' && editItemId) {
+                await apiClient.put(`/teacher/modules/${editItemId}`, {
+                    title: newItemTitle,
+                    orderIndex: newItemOrder
+                });
+            } else if (modalType === 'EDIT_LESSON' && editItemId) {
+                await apiClient.put(`/teacher/lessons/${editItemId}`, {
+                    title: newItemTitle,
+                    orderIndex: newItemOrder
+                });
             }
 
             setIsModalOpen(false);
@@ -100,6 +133,40 @@ export const TeacherCourseEditorPage = () => {
             setIsSaving(false);
         }
     };
+
+    const handleDeleteModule = async (module: Module) => {
+        if (!window.confirm(`Удалить модуль «${module.title}»? Все его уроки и шаги будут удалены безвозвратно.`)) return;
+
+        try {
+            await apiClient.delete(`/teacher/modules/${module.id}`);
+            setModules(modules.filter(m => m.id !== module.id));
+        } catch (error) {
+            alert('Не удалось удалить модуль');
+        }
+    };
+
+    const handleDeleteLesson = async (moduleId: number, lesson: Lesson) => {
+        if (!window.confirm(`Удалить урок «${lesson.title}»? Все его шаги будут удалены безвозвратно.`)) return;
+
+        try {
+            await apiClient.delete(`/teacher/lessons/${lesson.id}`);
+            setModules(modules.map(m => m.id === moduleId
+                ? { ...m, lessons: m.lessons.filter(l => l.id !== lesson.id) }
+                : m
+            ));
+        } catch (error) {
+            alert('Не удалось удалить урок');
+        }
+    };
+
+    const modalTitle = {
+        MODULE: 'Новый модуль',
+        LESSON: 'Новый урок',
+        EDIT_MODULE: 'Редактирование модуля',
+        EDIT_LESSON: 'Редактирование урока'
+    }[modalType];
+
+    const isLessonModal = modalType === 'LESSON' || modalType === 'EDIT_LESSON';
 
     if (isLoading) return <div className="p-8 text-slate-500">Загрузка структуры курса...</div>;
 
@@ -136,17 +203,33 @@ export const TeacherCourseEditorPage = () => {
                 ) : (
                     modules.map(module => (
                         <div key={module.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center group">
                                 <div className="flex items-center gap-3 font-medium text-slate-800">
                                     <Folder className="text-blue-500" size={20} />
                                     {module.orderIndex}. {module.title}
                                 </div>
-                                <button
-                                    onClick={() => openLessonModal(module.id, module.lessons.length)}
-                                    className="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 hover:bg-blue-50 rounded-md transition-colors"
-                                >
-                                    <Plus size={16} /> Урок
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => openEditModuleModal(module)}
+                                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                                        title="Редактировать модуль"
+                                    >
+                                        <Pencil size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteModule(module)}
+                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                                        title="Удалить модуль"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => openLessonModal(module.id, module.lessons.length)}
+                                        className="text-sm flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 hover:bg-blue-50 rounded-md transition-colors ml-2"
+                                    >
+                                        <Plus size={16} /> Урок
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="p-4 bg-white">
@@ -160,13 +243,28 @@ export const TeacherCourseEditorPage = () => {
                                                     <FileText className="text-slate-400 group-hover:text-blue-500 transition-colors" size={18} />
                                                     <span>{module.orderIndex}.{lesson.orderIndex}. {lesson.title}</span>
                                                 </div>
-                                                <button
-                                                    className="opacity-0 group-hover:opacity-100 text-xs bg-white border border-slate-200 px-3 py-1 rounded text-slate-600 hover:text-blue-600 transition-all shadow-sm flex items-center gap-1"
-                                                    // ВАЖНО: правильный роут в LessonEditorPage!
-                                                    onClick={() => navigate(`/teacher/courses/${courseId}/lessons/${lesson.id}/edit`)}
-                                                >
-                                                    <Plus size={14} /> Добавить шаги
-                                                </button>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => openEditLessonModal(lesson)}
+                                                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                                                        title="Редактировать урок"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteLesson(module.id, lesson)}
+                                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                                        title="Удалить урок"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        className="text-xs bg-white border border-slate-200 px-3 py-1 rounded text-slate-600 hover:text-blue-600 transition-all shadow-sm flex items-center gap-1 ml-1"
+                                                        onClick={() => navigate(`/teacher/courses/${courseId}/lessons/${lesson.id}/edit`)}
+                                                    >
+                                                        <ListTree size={14} /> Шаги
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -183,7 +281,7 @@ export const TeacherCourseEditorPage = () => {
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md border border-slate-200 flex flex-col">
                         <div className="flex justify-between items-center p-6 border-b border-slate-100">
                             <h2 className="text-xl font-bold text-slate-800">
-                                {modalType === 'MODULE' ? 'Новый модуль' : 'Новый урок'}
+                                {modalTitle}
                             </h2>
                             <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                                 <X size={24} />
@@ -197,7 +295,7 @@ export const TeacherCourseEditorPage = () => {
                                     <input
                                         type="text" required value={newItemTitle} onChange={e => setNewItemTitle(e.target.value)}
                                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder={modalType === 'MODULE' ? "Например: Введение в алгоритмы" : "Например: Что такое О-большое?"}
+                                        placeholder={isLessonModal ? "Например: Что такое О-большое?" : "Например: Введение в алгоритмы"}
                                     />
                                 </div>
                                 <div>

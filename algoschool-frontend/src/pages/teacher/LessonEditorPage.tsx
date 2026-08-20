@@ -1,14 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '../../api/axios'; // Проверь путь до axios
-import { PlusCircle, Save, ArrowLeft, Trash2, Hash, Plus } from 'lucide-react';
+import { PlusCircle, Save, ArrowLeft, Trash2, Hash, Plus, Pencil, X, BookOpen } from 'lucide-react';
 
 type StepType = 'THEORY' | 'CHOICE_PROBLEM' | 'INPUT_PROBLEM' | 'CODE_PROBLEM';
+
+interface StepDto {
+    id: number;
+    stepType: StepType;
+    orderIndex: number;
+    content?: string;
+    description?: string;
+    options?: string[];
+    correctOptionIndex?: number;
+    isMultipleChoice?: boolean;
+    correctAnswer?: string;
+    timeLimitSec?: number;
+    memoryLimitMb?: number;
+    allowedLanguages?: string;
+    ejudgeContestId?: number;
+    ejudgeProblemId?: string;
+}
+
+const STEP_TYPE_LABELS: Record<StepType, string> = {
+    THEORY: '📖 Теория',
+    CHOICE_PROBLEM: '🔘 Тест (с вариантами)',
+    INPUT_PROBLEM: '⌨️ Точный ввод ответа',
+    CODE_PROBLEM: '💻 Программирование'
+};
 
 export const LessonEditorPage = () => {
     const { courseId, lessonId } = useParams();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
+
+    // Список уже существующих шагов урока
+    const [steps, setSteps] = useState<StepDto[]>([]);
+    const [isLoadingSteps, setIsLoadingSteps] = useState(true);
+
+    // null => создаём новый шаг, иначе — id редактируемого шага
+    const [editingStepId, setEditingStepId] = useState<number | null>(null);
 
     // Состояния формы
     const [stepType, setStepType] = useState<StepType>('THEORY');
@@ -20,11 +51,28 @@ export const LessonEditorPage = () => {
     const [correctAnswer, setCorrectAnswer] = useState('');
     const [options, setOptions] = useState<string[]>(['Вариант 1', 'Вариант 2']);
     const [correctOptionIndex, setCorrectOptionIndex] = useState<number>(0);
+    const [isMultipleChoice, setIsMultipleChoice] = useState(false);
     const [timeLimit, setTimeLimit] = useState<number>(2);
     const [memoryLimit, setMemoryLimit] = useState<number>(256);
     const [allowedLanguages, setAllowedLanguages] = useState('Java, Python, C++');
     const [ejudgeContestId, setEjudgeContestId] = useState<number | ''>('');
     const [ejudgeProblemId, setEjudgeProblemId] = useState('');
+
+    const fetchSteps = async () => {
+        setIsLoadingSteps(true);
+        try {
+            const response = await apiClient.get<StepDto[]>(`/teacher/courses/${courseId}/lessons/${lessonId}/steps`);
+            setSteps(response.data.sort((a, b) => a.orderIndex - b.orderIndex));
+        } catch (error) {
+            console.error('Ошибка загрузки шагов', error);
+        } finally {
+            setIsLoadingSteps(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchSteps();
+    }, [courseId, lessonId]);
 
     // Функции для управления вариантами ответа (для тестов)
     const handleOptionChange = (index: number, value: string) => {
@@ -43,7 +91,57 @@ export const LessonEditorPage = () => {
         else if (correctOptionIndex > index) setCorrectOptionIndex(correctOptionIndex - 1);
     };
 
-    const handleCreateStep = async () => {
+    const resetForm = (nextOrderIndex: number) => {
+        setEditingStepId(null);
+        setStepType('THEORY');
+        setOrderIndex(nextOrderIndex);
+        setContent('');
+        setDescription('');
+        setCorrectAnswer('');
+        setOptions(['Вариант 1', 'Вариант 2']);
+        setCorrectOptionIndex(0);
+        setIsMultipleChoice(false);
+        setTimeLimit(2);
+        setMemoryLimit(256);
+        setAllowedLanguages('Java, Python, C++');
+        setEjudgeContestId('');
+        setEjudgeProblemId('');
+    };
+
+    const startEditingStep = (step: StepDto) => {
+        setEditingStepId(step.id);
+        setStepType(step.stepType);
+        setOrderIndex(step.orderIndex);
+        setContent(step.content ?? '');
+        setDescription(step.description ?? '');
+        setCorrectAnswer(step.correctAnswer ?? '');
+        setOptions(step.options && step.options.length > 0 ? step.options : ['Вариант 1', 'Вариант 2']);
+        setCorrectOptionIndex(step.correctOptionIndex ?? 0);
+        setIsMultipleChoice(step.isMultipleChoice ?? false);
+        setTimeLimit(step.timeLimitSec ?? 2);
+        setMemoryLimit(step.memoryLimitMb ?? 256);
+        setAllowedLanguages(step.allowedLanguages ?? 'Java, Python, C++');
+        setEjudgeContestId(step.ejudgeContestId ?? '');
+        setEjudgeProblemId(step.ejudgeProblemId ?? '');
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const cancelEditing = () => resetForm(steps.length + 1);
+
+    const handleDeleteStep = async (step: StepDto) => {
+        if (!window.confirm(`Удалить шаг №${step.orderIndex}? Это действие необратимо.`)) return;
+
+        try {
+            await apiClient.delete(`/teacher/courses/${courseId}/lessons/${lessonId}/steps/${step.id}`);
+            setSteps(steps.filter(s => s.id !== step.id));
+            if (editingStepId === step.id) cancelEditing();
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Не удалось удалить шаг');
+        }
+    };
+
+    const handleSaveStep = async () => {
         setIsLoading(true);
         const payload: any = { stepType, orderIndex };
 
@@ -58,7 +156,7 @@ export const LessonEditorPage = () => {
             if (stepType === 'CHOICE_PROBLEM') {
                 payload.options = options.filter(opt => opt.trim() !== ''); // Убираем пустые
                 payload.correctOptionIndex = correctOptionIndex;
-                payload.isMultipleChoice = false; // По умолчанию 1 правильный ответ
+                payload.isMultipleChoice = isMultipleChoice;
             }
             if (stepType === 'CODE_PROBLEM') {
                 payload.timeLimitSec = timeLimit;
@@ -70,18 +168,24 @@ export const LessonEditorPage = () => {
         }
 
         try {
-            await apiClient.post(`/teacher/courses/${courseId}/lessons/${lessonId}/steps`, payload);
-            alert('Шаг успешно создан!');
+            if (editingStepId) {
+                const response = await apiClient.put<StepDto>(
+                    `/teacher/courses/${courseId}/lessons/${lessonId}/steps/${editingStepId}`,
+                    payload
+                );
+                setSteps(steps.map(s => s.id === editingStepId ? response.data : s).sort((a, b) => a.orderIndex - b.orderIndex));
+                resetForm(steps.length + 1);
+            } else {
+                const response = await apiClient.post<StepDto>(
+                    `/teacher/courses/${courseId}/lessons/${lessonId}/steps`,
+                    payload
+                );
+                const nextSteps = [...steps, response.data].sort((a, b) => a.orderIndex - b.orderIndex);
+                setSteps(nextSteps);
 
-            // Авто-инкремент для следующего шага
-            setOrderIndex(prev => prev + 1);
-
-            // Очищаем текстовые поля для нового шага
-            setContent('');
-            setDescription('');
-            setCorrectAnswer('');
-            setEjudgeContestId('');
-            setEjudgeProblemId('');
+                // Авто-инкремент для следующего шага, остальное поле очищаем
+                resetForm(orderIndex + 1);
+            }
         } catch (error: any) {
             alert(error.response?.data?.message || 'Ошибка при сохранении');
         } finally {
@@ -95,10 +199,70 @@ export const LessonEditorPage = () => {
                 <ArrowLeft size={18} /> К структуре курса
             </button>
 
+            {/* Список существующих шагов */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
+                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <BookOpen className="text-blue-600" size={20} /> Шаги урока
+                </h2>
+
+                {isLoadingSteps ? (
+                    <div className="text-slate-400 text-sm py-4">Загрузка шагов...</div>
+                ) : steps.length === 0 ? (
+                    <div className="text-slate-400 text-sm italic py-4">Шагов пока нет. Создайте первый ниже.</div>
+                ) : (
+                    <div className="space-y-2">
+                        {steps.map(step => (
+                            <div
+                                key={step.id}
+                                className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${
+                                    editingStepId === step.id
+                                        ? 'border-blue-400 bg-blue-50'
+                                        : 'border-slate-200 hover:bg-slate-50'
+                                }`}
+                            >
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <span className="text-slate-400 font-mono text-sm w-6 text-right">{step.orderIndex}</span>
+                                    <span className="text-sm font-medium text-slate-700 shrink-0">{STEP_TYPE_LABELS[step.stepType]}</span>
+                                    <span className="text-sm text-slate-500 truncate">
+                                        {step.stepType === 'THEORY' ? step.content : step.description}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0 ml-3">
+                                    <button
+                                        onClick={() => startEditingStep(step)}
+                                        className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-100 rounded-lg transition-colors"
+                                        title="Редактировать шаг"
+                                    >
+                                        <Pencil size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteStep(step)}
+                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                                        title="Удалить шаг"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                <h1 className="text-2xl font-bold text-slate-800 mb-8 flex items-center gap-2">
-                    <PlusCircle className="text-blue-600" /> Создание шага
-                </h1>
+                <div className="flex items-center justify-between mb-8">
+                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <PlusCircle className="text-blue-600" /> {editingStepId ? `Редактирование шага №${orderIndex}` : 'Создание шага'}
+                    </h1>
+                    {editingStepId && (
+                        <button
+                            onClick={cancelEditing}
+                            className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+                        >
+                            <X size={16} /> Отменить редактирование
+                        </button>
+                    )}
+                </div>
 
                 {/* Базовые настройки */}
                 <div className="grid grid-cols-2 gap-6 mb-8">
@@ -106,14 +270,18 @@ export const LessonEditorPage = () => {
                         <label className="block text-sm font-semibold text-slate-700 mb-2">Тип контента</label>
                         <select
                             value={stepType}
+                            disabled={!!editingStepId}
                             onChange={(e) => setStepType(e.target.value as StepType)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             <option value="THEORY">📖 Теория</option>
                             <option value="CHOICE_PROBLEM">🔘 Тест (с вариантами)</option>
                             <option value="INPUT_PROBLEM">⌨️ Точный ввод ответа</option>
                             <option value="CODE_PROBLEM">💻 Программирование</option>
                         </select>
+                        {editingStepId && (
+                            <p className="text-xs text-slate-400 mt-1">Тип существующего шага изменить нельзя — удалите шаг и создайте новый.</p>
+                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">Позиция в уроке (№)</label>
@@ -269,11 +437,11 @@ export const LessonEditorPage = () => {
                 {/* Кнопка сохранения */}
                 <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end">
                     <button
-                        onClick={handleCreateStep}
+                        onClick={handleSaveStep}
                         disabled={isLoading}
                         className="bg-blue-600 text-white px-10 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center gap-2"
                     >
-                        <Save size={20} /> {isLoading ? 'Сохранение...' : 'Создать шаг'}
+                        <Save size={20} /> {isLoading ? 'Сохранение...' : editingStepId ? 'Сохранить изменения' : 'Создать шаг'}
                     </button>
                 </div>
             </div>
