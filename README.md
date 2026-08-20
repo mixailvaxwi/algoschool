@@ -42,7 +42,18 @@ openssl rand -base64 32
 docker compose up --build
 ```
 
-Или вручную — MySQL уже запущена, база `algoschool` создана:
+**IntelliJ IDEA.** Переменные из `.env` среда запуска не читает — их нужно задать
+в конфигурации: `Run` → `Edit Configurations` → поле `Environment variables`,
+значения через точку с запятой:
+
+```
+JWT_SECRET=<ключ из openssl rand -base64 32>;DB_PASSWORD=<пароль MySQL>
+```
+
+Если переменные не заданы, приложение не стартует и печатает список
+недостающих — это ожидаемое поведение, а не поломка.
+
+Или вручную из терминала — MySQL уже запущена, база `algoschool` создана:
 
 ```bash
 set -a && . ./.env && set +a && ./mvnw spring-boot:run

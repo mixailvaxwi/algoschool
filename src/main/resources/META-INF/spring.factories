@@ -1,0 +1,7 @@
+# Проверка обязательных переменных окружения до старта контекста
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  com.algoschool.config.RequiredEnvironmentPostProcessor
+
+# Понятное сообщение вместо стектрейса, если переменных нет
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+  com.algoschool.config.MissingConfigurationFailureAnalyzer
