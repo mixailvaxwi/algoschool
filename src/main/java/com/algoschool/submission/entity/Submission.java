@@ -1,6 +1,7 @@
 package com.algoschool.submission.entity;
 
-import com.algoschool.step.entity.Problem;
+import com.algoschool.problem.entity.Problem;
+import com.algoschool.step.entity.ProblemStep;
 import com.algoschool.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -20,9 +21,21 @@ public class Submission {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    /** Что решали. История попыток и счётчики принадлежат задаче, а не уроку. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "problem_id", nullable = false)
     private Problem problem;
+
+    /**
+     * Где решали: задача может стоять в нескольких уроках, и отметку
+     * «пройдено» надо ставить именно тому шагу, в котором студент был.
+     * <p>
+     * Null, если размещение потом сняли с урока — задача и само решение при
+     * этом остаются (внешний ключ объявлен ON DELETE SET NULL).
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "step_id")
+    private ProblemStep step;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String payload;

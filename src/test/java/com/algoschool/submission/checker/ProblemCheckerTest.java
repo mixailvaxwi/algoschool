@@ -1,9 +1,8 @@
 package com.algoschool.submission.checker;
 
-import com.algoschool.step.entity.ChoiceProblem;
-import com.algoschool.step.entity.CodeProblem;
-import com.algoschool.step.entity.TextProblem;
-import com.algoschool.step.entity.TheoryStep;
+import com.algoschool.problem.entity.ChoiceProblem;
+import com.algoschool.problem.entity.CodeProblem;
+import com.algoschool.problem.entity.TextProblem;
 import com.algoschool.submission.entity.SubmissionStatus;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +11,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class StepCheckerTest {
+class ProblemCheckerTest {
 
     private final TextProblemChecker textChecker = new TextProblemChecker();
     private final ChoiceProblemChecker choiceChecker = new ChoiceProblemChecker();
@@ -87,12 +86,17 @@ class StepCheckerTest {
         assertThat(codeChecker.check(new CodeProblem(), "class Main {}")).isEqualTo(SubmissionStatus.PENDING);
     }
 
+    /**
+     * Теории в этом списке больше нет: чекер принимает Problem, а теория —
+     * шаг урока, не задача, и до проверяющего модуля не доходит по типу.
+     */
     @Test
-    void checkersOnlySupportTheirOwnStepType() {
+    void checkersOnlySupportTheirOwnProblemType() {
         assertThat(textChecker.supports(new TextProblem())).isTrue();
         assertThat(textChecker.supports(new ChoiceProblem())).isFalse();
         assertThat(choiceChecker.supports(new ChoiceProblem())).isTrue();
+        assertThat(choiceChecker.supports(new CodeProblem())).isFalse();
         assertThat(codeChecker.supports(new CodeProblem())).isTrue();
-        assertThat(codeChecker.supports(new TheoryStep())).isFalse();
+        assertThat(codeChecker.supports(new TextProblem())).isFalse();
     }
 }

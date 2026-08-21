@@ -12,6 +12,7 @@ import { AdminLayout } from './layouts/AdminLayout';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { TeacherCoursesPage } from './pages/teacher/TeacherCoursesPage';
 import { TeacherCourseEditorPage } from './pages/teacher/TeacherCourseEditorPage';
+import { TeacherProblemsPage } from './pages/teacher/TeacherProblemsPage';
 import { LessonEditorPage } from './pages/teacher/LessonEditorPage';
 import { LessonPlayerPage } from './pages/student/LessonPlayerPage';
 import { TeacherApplicationsPage } from './pages/teacher/TeacherApplicationsPage';
@@ -42,6 +43,7 @@ function App() {
                         <Route path="courses/:courseId" element={<TeacherCourseEditorPage />} />
                         <Route path="courses/:courseId/lessons/:lessonId/edit" element={<LessonEditorPage />} />
                         <Route path="courses/:courseId/applications" element={<TeacherApplicationsPage />} />
+                        <Route path="problems" element={<TeacherProblemsPage />} />
                         <Route path="submissions" element={<TeacherSubmissionsPage />} />
                         <Route path="users" element={<div>Страница пользователей (в разработке)</div>} />
                     </Route>

@@ -13,6 +13,10 @@ import java.util.List;
  * Поля специфичны для типа шага, поэтому обязательными помечены только общие:
  * остальное проверяет StepServiceImpl при разборе stepType. Раньше валидации
  * не было вовсе, и пустой запрос доходил до базы.
+ * <p>
+ * Для задач запрос работает в двух режимах: с {@link #problemId} — ставит в
+ * урок готовую задачу из банка, без него — заводит новую задачу и сразу её
+ * размещает (так работает форма редактора урока).
  */
 @Data
 public class StepCreateRequest {
@@ -28,7 +32,15 @@ public class StepCreateRequest {
     private String content;
 
     // --- Общее для задач ---
+    /** Задача из банка. Если задан, остальные поля задачи игнорируются. */
+    private Long problemId;
+    /** Название задачи в банке. Если не задано, берётся первая строка условия. */
+    private String title;
     private String description;
+    private String difficulty;
+    private String visibility;
+    private Integer maxScore;
+    private List<String> tags;
 
     // --- CHOICE_PROBLEM ---
     private List<String> options;

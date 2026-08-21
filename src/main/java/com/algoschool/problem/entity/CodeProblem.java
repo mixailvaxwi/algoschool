@@ -1,4 +1,4 @@
-package com.algoschool.step.entity;
+package com.algoschool.problem.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

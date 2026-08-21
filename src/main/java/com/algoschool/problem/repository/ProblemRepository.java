@@ -1,15 +1,18 @@
-package com.algoschool.step.repository;
+package com.algoschool.problem.repository;
 
-import com.algoschool.step.entity.Problem;
+import com.algoschool.problem.entity.Problem;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Repository
-public interface ProblemRepository extends JpaRepository<Problem, Long> {
+public interface ProblemRepository extends JpaRepository<Problem, Long>, JpaSpecificationExecutor<Problem> {
 
     // Атомарное увеличение счетчика попыток на стороне базы данных
     @Modifying
@@ -22,4 +25,8 @@ public interface ProblemRepository extends JpaRepository<Problem, Long> {
     @Transactional
     @Query("UPDATE Problem p SET p.successStudentsCount = p.successStudentsCount + 1 WHERE p.id = :problemId")
     void incrementSuccessCount(@Param("problemId") Long problemId);
+
+    /** Теги автора — для подсказок в фильтре банка. */
+    @Query("SELECT DISTINCT t FROM Problem p JOIN p.tags t WHERE p.author.id = :authorId ORDER BY t")
+    List<String> findTagsByAuthorId(@Param("authorId") Long authorId);
 }

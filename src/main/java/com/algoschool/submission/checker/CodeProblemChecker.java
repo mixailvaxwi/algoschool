@@ -1,22 +1,22 @@
 package com.algoschool.submission.checker;
 
-import com.algoschool.step.entity.CodeProblem;
-import com.algoschool.step.entity.Step;
+import com.algoschool.problem.entity.CodeProblem;
+import com.algoschool.problem.entity.Problem;
 import com.algoschool.submission.entity.SubmissionStatus;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CodeProblemChecker implements StepChecker {
+public class CodeProblemChecker implements ProblemChecker {
 
     @Override
-    public boolean supports(Step step) {
-        return step instanceof CodeProblem;
+    public boolean supports(Problem problem) {
+        return problem instanceof CodeProblem;
     }
 
     @Override
-    public SubmissionStatus check(Step step, String payload) {
-        // TODO: Интеграция с системой выполнения кода (Judge0 / RabbitMQ -> Worker)
-        // Код принят платформой и поставлен в очередь на асинхронную проверку.
+    public SubmissionStatus check(Problem problem, String payload) {
+        // Вердикт приходит асинхронно от Ejudge: код принят платформой и
+        // поставлен в очередь, окончательный статус проставит EjudgePoller.
         return SubmissionStatus.PENDING;
     }
 }

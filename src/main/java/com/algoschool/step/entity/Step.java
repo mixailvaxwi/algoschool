@@ -1,25 +1,22 @@
-// Step.java
 package com.algoschool.step.entity;
 
 import com.algoschool.course.entity.Lesson;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * Шаг урока: место в программе курса.
+ * <p>
+ * Подтипов два — теория держит текст прямо в себе, а
+ * {@link ProblemStep} лишь ссылается на задачу из банка. Наружу сущность
+ * не отдаётся: и плеер, и редактор преподавателя работают через DTO.
+ */
 @Entity
 @Table(name = "steps")
-@Inheritance(strategy = InheritanceType.JOINED) // Идеально!
+@Inheritance(strategy = InheritanceType.JOINED)
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = TheoryStep.class, name = "theory"),
-        @JsonSubTypes.Type(value = CodeProblem.class, name = "code"),
-        @JsonSubTypes.Type(value = TextProblem.class, name = "text"),
-        @JsonSubTypes.Type(value = ChoiceProblem.class, name = "choice")
-})
 public abstract class Step {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

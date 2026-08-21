@@ -1,5 +1,4 @@
-// TextProblem.java
-package com.algoschool.step.entity;
+package com.algoschool.problem.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
@@ -11,7 +10,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "text_problems")
 @Getter @Setter
-public class TextProblem extends Problem { // НАСЛЕДУЕТСЯ ОТ PROBLEM!
+public class TextProblem extends Problem {
     @Column(name = "correct_answer", nullable = false)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String correctAnswer;

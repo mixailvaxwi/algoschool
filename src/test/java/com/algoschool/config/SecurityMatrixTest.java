@@ -5,6 +5,8 @@ import com.algoschool.admin.service.AdminUserService;
 import com.algoschool.auth.service.JwtService;
 import com.algoschool.course.controller.StudentCourseController;
 import com.algoschool.course.controller.TeacherCourseController;
+import com.algoschool.problem.controller.TeacherProblemController;
+import com.algoschool.problem.service.ProblemService;
 import com.algoschool.course.service.StudentCourseService;
 import com.algoschool.course.service.TeacherCourseService;
 import com.algoschool.exception.GlobalExceptionHandler;
@@ -36,7 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * ни с одним правилом и доставался любому авторизованному пользователю,
  * а неаутентифицированный запрос получал 403 вместо 401.
  */
-@WebMvcTest(controllers = {TeacherCourseController.class, StudentCourseController.class, UserController.class, AdminUserController.class})
+@WebMvcTest(controllers = {TeacherCourseController.class, StudentCourseController.class, UserController.class,
+        AdminUserController.class, TeacherProblemController.class})
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, SecurityErrorWriter.class,
         RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class, GlobalExceptionHandler.class})
 class SecurityMatrixTest {
@@ -50,6 +53,7 @@ class SecurityMatrixTest {
     @MockitoBean private StudentCourseService studentCourseService;
     @MockitoBean private UserService userService;
     @MockitoBean private AdminUserService adminUserService;
+    @MockitoBean private ProblemService problemService;
 
     // --- Публичная витрина -------------------------------------------------
 
@@ -102,6 +106,28 @@ class SecurityMatrixTest {
     @WithAnonymousUser
     void anonymousGetsUnauthorizedOnAdminArea() throws Exception {
         mvc.perform(get("/api/admin/users")).andExpect(status().isUnauthorized());
+    }
+
+    // --- Банк задач ---------------------------------------------------------
+
+    /** Банк живёт внутри /api/teacher/**, поэтому студенческий токен туда не достаёт. */
+    @Test
+    @WithMockUser(username = "student1", roles = "STUDENT")
+    void studentIsForbiddenFromProblemBank() throws Exception {
+        mvc.perform(get("/api/teacher/problems")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "teacher1", roles = "TEACHER")
+    void teacherReachesProblemBank() throws Exception {
+        when(problemService.search(any(), anyString())).thenReturn(List.of());
+        mvc.perform(get("/api/teacher/problems")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void anonymousGetsUnauthorizedOnProblemBank() throws Exception {
+        mvc.perform(get("/api/teacher/problems")).andExpect(status().isUnauthorized());
     }
 
     // --- Личные данные ------------------------------------------------------
