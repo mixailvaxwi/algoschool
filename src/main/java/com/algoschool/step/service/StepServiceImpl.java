@@ -5,6 +5,7 @@ import com.algoschool.course.entity.Lesson;
 import com.algoschool.course.repository.LessonRepository;
 import com.algoschool.course.service.CourseAccessService;
 import com.algoschool.exception.AppException;
+import com.algoschool.grade.service.GradeService;
 import com.algoschool.problem.dto.ProblemRequest;
 import com.algoschool.problem.entity.*;
 import com.algoschool.problem.service.ProblemContentMapper;
@@ -38,6 +39,7 @@ public class StepServiceImpl implements StepService {
     private final CourseAccessService courseAccess;
     private final ProblemService problemService;
     private final ProblemContentMapper problemMapper;
+    private final GradeService gradeService;
 
     @Override
     @Transactional
@@ -56,7 +58,15 @@ public class StepServiceImpl implements StepService {
         step.setLesson(lesson);
         step.setOrderIndex(request.getOrderIndex());
 
-        return toTeacherDto(stepRepository.save(step), username);
+        Step saved = stepRepository.save(step);
+        if (saved instanceof ProblemStep problemStep) {
+            // Каждая задача урока — столбец журнала оценок. Заводим его здесь,
+            // а не при первом решении: преподаватель должен видеть пустой
+            // столбец сразу, иначе журнал курса неполон до первой отправки.
+            gradeService.onProblemStepCreated(problemStep);
+        }
+
+        return toTeacherDto(saved, username);
     }
 
     @Override
@@ -124,6 +134,9 @@ public class StepServiceImpl implements StepService {
         // остаётся в банке. Отправленные решения не трогаем: они привязаны к
         // задаче, а ссылка на снятое размещение обнулится (ON DELETE SET NULL).
         progressRepository.deleteByStepId(stepId);
+
+        // Столбец журнала осмыслен ровно столько же, сколько само размещение.
+        gradeService.onProblemStepRemoved(stepId);
 
         stepRepository.delete(step);
     }

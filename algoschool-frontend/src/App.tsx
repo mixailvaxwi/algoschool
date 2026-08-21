@@ -13,8 +13,10 @@ import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { TeacherCoursesPage } from './pages/teacher/TeacherCoursesPage';
 import { TeacherCourseEditorPage } from './pages/teacher/TeacherCourseEditorPage';
 import { TeacherProblemsPage } from './pages/teacher/TeacherProblemsPage';
+import { GradebookPage } from './pages/teacher/GradebookPage';
 import { LessonEditorPage } from './pages/teacher/LessonEditorPage';
 import { LessonPlayerPage } from './pages/student/LessonPlayerPage';
+import { MyGradesPage } from './pages/student/MyGradesPage';
 import { TeacherApplicationsPage } from './pages/teacher/TeacherApplicationsPage';
 import { TeacherSubmissionsPage } from './pages/teacher/TeacherSubmissionsPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -43,6 +45,7 @@ function App() {
                         <Route path="courses/:courseId" element={<TeacherCourseEditorPage />} />
                         <Route path="courses/:courseId/lessons/:lessonId/edit" element={<LessonEditorPage />} />
                         <Route path="courses/:courseId/applications" element={<TeacherApplicationsPage />} />
+                        <Route path="courses/:courseId/gradebook" element={<GradebookPage />} />
                         <Route path="problems" element={<TeacherProblemsPage />} />
                         <Route path="submissions" element={<TeacherSubmissionsPage />} />
                         <Route path="users" element={<div>Страница пользователей (в разработке)</div>} />
@@ -67,6 +70,7 @@ function App() {
                                     <Route path="/courses/enrolled" element={<ProtectedRoute><MyCoursesPage /></ProtectedRoute>} />
                                     <Route path="/courses/:courseId" element={<CoursePage />} />
                                     <Route path="/courses/:courseId/lessons/:lessonId" element={<LessonPlayerPage />} />
+                                    <Route path="/courses/:courseId/grades" element={<ProtectedRoute><MyGradesPage /></ProtectedRoute>} />
                                     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                                     <Route path="/users/:username" element={<ProtectedRoute><PublicProfilePage /></ProtectedRoute>} />
                                     <Route path="/my-applications" element={<ProtectedRoute><MyApplicationsPage /></ProtectedRoute>} />

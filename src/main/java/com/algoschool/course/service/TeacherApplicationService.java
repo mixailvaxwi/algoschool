@@ -1,6 +1,7 @@
 package com.algoschool.course.service;
 
 import com.algoschool.exception.AppException;
+import com.algoschool.grade.service.GradeService;
 
 import com.algoschool.course.dto.teacher.ApplicationDto;
 import com.algoschool.course.dto.teacher.ApplicationStatusUpdateRequest;
@@ -29,6 +30,7 @@ public class TeacherApplicationService {
     private final UserCourseRepository userCourseRepository;
     private final UserRepository userRepository;
     private final CourseAccessService courseAccess;
+    private final GradeService gradeService;
 
     // Получить все заявки для конкретного курса
     @Transactional(readOnly = true)
@@ -70,6 +72,10 @@ public class TeacherApplicationService {
                         .build();
                 userCourseRepository.save(enrollment);
             }
+            // Задачи курса могли встречаться студенту раньше в другом курсе:
+            // решение принадлежит задаче, и журнал должен это учесть сразу.
+            gradeService.recomputeCourseForUser(
+                    application.getCourse().getId(), application.getStudent().getId());
         } else if (previousStatus == ApplicationStatus.APPROVED) {
             // Одобрение отозвали — снимаем с курса. Раньше статус менялся,
             // а доступ у студента оставался навсегда.

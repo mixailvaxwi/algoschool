@@ -17,6 +17,9 @@ public interface UserCourseRepository extends JpaRepository<UserCourse, Long> {
 
     List<UserCourse> findAllByUserId(Long userId);
 
+    /** Студенты курса — строки журнала оценок. Автор курса сюда не входит. */
+    List<UserCourse> findAllByCourseId(Long courseId);
+
     /** Снятие с курса при отзыве одобрения заявки. */
     void deleteByUserIdAndCourseId(Long userId, Long courseId);
 }

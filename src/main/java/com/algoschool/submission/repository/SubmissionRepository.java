@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -27,4 +28,19 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long>, J
 
     @Query("SELECT s FROM Submission s JOIN FETCH s.problem WHERE s.status = :status")
     List<Submission> findByStatusWithProblem(@Param("status") SubmissionStatus status);
+
+    /**
+     * Проверенные попытки студента по задаче, от старой к новой, — исходные
+     * данные для политики зачёта. Непроверенные (score IS NULL) отсеиваются
+     * здесь, чтобы политике не приходилось про них знать.
+     */
+    @Query("SELECT s FROM Submission s WHERE s.user.id = :userId AND s.problem.id = :problemId "
+            + "AND s.score IS NOT NULL ORDER BY s.createdAt ASC, s.id ASC")
+    List<Submission> findScoredAttempts(@Param("userId") Long userId, @Param("problemId") Long problemId);
+
+    /** То же для многих задач разом — пересчёт целого курса при зачислении. */
+    @Query("SELECT s FROM Submission s WHERE s.user.id = :userId AND s.problem.id IN :problemIds "
+            + "AND s.score IS NOT NULL ORDER BY s.createdAt ASC, s.id ASC")
+    List<Submission> findScoredAttemptsForProblems(@Param("userId") Long userId,
+                                                   @Param("problemIds") Collection<Long> problemIds);
 }

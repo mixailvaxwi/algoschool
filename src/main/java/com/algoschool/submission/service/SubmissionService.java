@@ -6,6 +6,7 @@ import com.algoschool.ejudge.EjudgeUnavailableException;
 import com.algoschool.ejudge.EjudgeVerdictMapper;
 import com.algoschool.ejudge.dto.EjudgeRunStatusResponse;
 import com.algoschool.exception.AppException;
+import com.algoschool.grade.service.GradeService;
 import com.algoschool.problem.entity.CodeProblem;
 import com.algoschool.problem.entity.Problem;
 import com.algoschool.problem.repository.ProblemRepository;
@@ -55,6 +56,7 @@ public class SubmissionService {
     private final CourseAccessService courseAccess;
     private final ProblemRepository problemRepository;
     private final EjudgeVerdictMapper verdictMapper;
+    private final GradeService gradeService;
 
     @Transactional
     public AssessmentResult processSubmission(Long stepId, SubmissionRequest request, String username) {
@@ -84,6 +86,8 @@ public class SubmissionService {
                 .step(step)
                 .payload(request.getPayload())
                 .status(status)
+                .maxScore(problem.getMaxScore())
+                .score(scoreFor(status, problem))
                 .build();
 
         if (problem instanceof CodeProblem codeProblem) {
@@ -101,6 +105,7 @@ public class SubmissionService {
                 // выполнения» там, где на самом деле лежал Ejudge.
                 status = SubmissionStatus.SUBMISSION_FAILED;
                 submission.setStatus(status);
+                submission.setScore(null);
                 log.error("Решение не передано в Ejudge: {}", e.getMessage());
             }
         }
@@ -113,6 +118,11 @@ public class SubmissionService {
 
         if (status == SubmissionStatus.CORRECT) {
             updateUserProgress(user, problem, step, request.getPayload());
+        }
+        // Пересчитываем и по неверной попытке: политика зачёта может быть
+        // «последняя», и тогда неудача после успеха меняет оценку.
+        if (submission.getScore() != null) {
+            gradeService.recomputeForProblem(user, problem);
         }
 
         // Один словарь вердиктов на оба эндпоинта: /submit и /submit/history
@@ -166,6 +176,10 @@ public class SubmissionService {
         }
 
         sub.setStatus(mapped);
+        sub.setScore(scoreFor(mapped, sub.getProblem()));
+        if (sub.getMaxScore() == null) {
+            sub.setMaxScore(sub.getProblem().getMaxScore());
+        }
         if (response.getResult().getCompilerOutput() != null) {
             sub.setCompilerOutput(response.getResult().getCompilerOutput());
         }
@@ -179,7 +193,29 @@ public class SubmissionService {
             // всё равно засчитываем — оно принадлежит задаче, а не размещению.
             updateUserProgress(sub.getUser(), sub.getProblem(), sub.getStep(), sub.getPayload());
         }
+        if (sub.getScore() != null) {
+            gradeService.recomputeForProblem(sub.getUser(), sub.getProblem());
+        }
         log.info("Решение {} проверено Ejudge: {}", submissionId, mapped);
+    }
+
+    /**
+     * Балл за попытку по вердикту.
+     * <p>
+     * Пока оценка бинарная: вес задачи целиком или ноль. Частичный балл за
+     * подзадачу появится вместе с типами задач, которые его допускают, — здесь
+     * важно, что балл уже хранится у отправки, а не выводится из вердикта на лету.
+     * <p>
+     * null для PENDING и SUBMISSION_FAILED: в первом случае проверка не
+     * закончена, во втором лежал Ejudge — это не вердикт по ответу студента и
+     * в зачёт идти не должно.
+     */
+    private Integer scoreFor(SubmissionStatus status, Problem problem) {
+        return switch (status) {
+            case CORRECT -> problem.getMaxScore();
+            case PENDING, SUBMISSION_FAILED -> null;
+            default -> 0;
+        };
     }
 
     // Вспомогательный метод для генерации текстов

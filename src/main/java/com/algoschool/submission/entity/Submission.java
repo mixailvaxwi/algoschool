@@ -48,6 +48,21 @@ public class Submission {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /**
+     * Балл за эту попытку и шкала, в которой он выставлен.
+     * <p>
+     * NULL — это не ноль: ноль означает «проверено, не засчитано», а NULL —
+     * «балла ещё нет». Так помечены попытки в статусе PENDING (проверка не
+     * закончена) и SUBMISSION_FAILED (сбой Ejudge, а не вердикт по ответу).
+     * В политику зачёта такие попытки не попадают — иначе недоступность
+     * проверяющей системы портила бы оценку студента.
+     */
+    @Column(name = "score")
+    private Integer score;
+
+    @Column(name = "max_score")
+    private Integer maxScore;
+
     @Column(name = "external_run_id")
     private Integer externalRunId;
 

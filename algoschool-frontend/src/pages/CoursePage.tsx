@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { apiClient } from '../api/axios';
-import { Book, PlayCircle, Lock, Info } from 'lucide-react';
+import { Book, PlayCircle, Lock, Info, Award } from 'lucide-react';
 import { CourseApplicationModal } from '../components/CourseApplicationModal';
 
 interface Lesson {
@@ -131,6 +131,16 @@ export const CoursePage = () => {
                             </button>
                         )}
                     </div>
+                )}
+
+                {course.isEnrolled && (
+                    <Link
+                        to={`/courses/${courseId}/grades`}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 border border-slate-200 hover:bg-slate-50 rounded-xl font-medium text-slate-700 transition-colors"
+                    >
+                        <Award size={18} className="text-blue-600" />
+                        Мои оценки
+                    </Link>
                 )}
             </div>
 

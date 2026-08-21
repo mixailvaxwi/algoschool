@@ -10,6 +10,7 @@ import com.algoschool.course.repository.CourseApplicationRepository;
 import com.algoschool.course.repository.CourseRepository;
 import com.algoschool.course.repository.UserCourseRepository;
 import com.algoschool.exception.AppException;
+import com.algoschool.grade.service.GradeService;
 import com.algoschool.user.entity.User;
 import com.algoschool.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class StudentCourseService {
     private final CourseApplicationRepository applicationRepository;
     private final CourseAccessService courseAccess;
     private final CourseStructureService structureService;
+    private final GradeService gradeService;
 
     @Transactional(readOnly = true)
     public List<CourseCatalogDto> getCatalog(String username) {
@@ -136,6 +138,11 @@ public class StudentCourseService {
         // Если курс ОТКРЫТЫЙ - записываем сразу
         UserCourse enrollment = UserCourse.builder().user(student).course(course).build();
         userCourseRepository.save(enrollment);
+
+        // Курс мог собрать задачи из банка, которые студент уже решал в другом
+        // курсе. Решение принадлежит задаче, а не месту, поэтому журнал нового
+        // курса должен открыться с уже засчитанными баллами, а не с нулями.
+        gradeService.recomputeCourseForUser(course.getId(), student.getId());
 
         return EnrollmentResponse.builder()
                 .courseId(course.getId()).status(ApplicationStatus.APPROVED)

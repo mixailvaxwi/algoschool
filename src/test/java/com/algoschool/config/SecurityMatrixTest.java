@@ -5,11 +5,16 @@ import com.algoschool.admin.service.AdminUserService;
 import com.algoschool.auth.service.JwtService;
 import com.algoschool.course.controller.StudentCourseController;
 import com.algoschool.course.controller.TeacherCourseController;
+import com.algoschool.grade.controller.StudentGradeController;
+import com.algoschool.grade.controller.TeacherGradebookController;
+import com.algoschool.grade.service.GradeService;
 import com.algoschool.problem.controller.TeacherProblemController;
 import com.algoschool.problem.service.ProblemService;
 import com.algoschool.course.service.StudentCourseService;
 import com.algoschool.course.service.TeacherCourseService;
 import com.algoschool.exception.GlobalExceptionHandler;
+import com.algoschool.grade.dto.GradebookDto;
+import com.algoschool.grade.dto.MyGradesDto;
 import com.algoschool.user.controller.UserController;
 import com.algoschool.user.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -39,7 +44,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * а неаутентифицированный запрос получал 403 вместо 401.
  */
 @WebMvcTest(controllers = {TeacherCourseController.class, StudentCourseController.class, UserController.class,
-        AdminUserController.class, TeacherProblemController.class})
+        AdminUserController.class, TeacherProblemController.class,
+        TeacherGradebookController.class, StudentGradeController.class})
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, SecurityErrorWriter.class,
         RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class, GlobalExceptionHandler.class})
 class SecurityMatrixTest {
@@ -54,6 +60,7 @@ class SecurityMatrixTest {
     @MockitoBean private UserService userService;
     @MockitoBean private AdminUserService adminUserService;
     @MockitoBean private ProblemService problemService;
+    @MockitoBean private GradeService gradeService;
 
     // --- Публичная витрина -------------------------------------------------
 
@@ -128,6 +135,38 @@ class SecurityMatrixTest {
     @WithAnonymousUser
     void anonymousGetsUnauthorizedOnProblemBank() throws Exception {
         mvc.perform(get("/api/teacher/problems")).andExpect(status().isUnauthorized());
+    }
+
+    // --- Журнал оценок --------------------------------------------------------
+
+    /** Журнал курса — преподавательский маршрут: студенту туда нельзя. */
+    @Test
+    @WithMockUser(username = "student1", roles = "STUDENT")
+    void studentIsForbiddenFromGradebook() throws Exception {
+        mvc.perform(get("/api/teacher/courses/1/gradebook")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "teacher1", roles = "TEACHER")
+    void teacherReachesGradebook() throws Exception {
+        when(gradeService.gradebook(any(), anyString()))
+                .thenReturn(new GradebookDto(1L, "Курс", List.of(), List.of(), 0));
+        mvc.perform(get("/api/teacher/courses/1/gradebook")).andExpect(status().isOk());
+    }
+
+    /** Свои оценки студент видит, но только после входа. */
+    @Test
+    @WithMockUser(username = "student1", roles = "STUDENT")
+    void studentSeesOwnGrades() throws Exception {
+        when(gradeService.myGrades(any(), anyString()))
+                .thenReturn(new MyGradesDto(1L, "Курс", List.of(), 0, 0, 0.0));
+        mvc.perform(get("/api/courses/1/my-grades")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void anonymousGetsUnauthorizedOnOwnGrades() throws Exception {
+        mvc.perform(get("/api/courses/1/my-grades")).andExpect(status().isUnauthorized());
     }
 
     // --- Личные данные ------------------------------------------------------
