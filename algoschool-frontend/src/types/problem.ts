@@ -1,4 +1,13 @@
-export type ProblemType = 'CHOICE_PROBLEM' | 'INPUT_PROBLEM' | 'CODE_PROBLEM';
+export type ProblemType =
+    | 'CHOICE_PROBLEM'
+    | 'INPUT_PROBLEM'
+    | 'CODE_PROBLEM'
+    | 'NUMERIC_PROBLEM'
+    | 'MATCHING_PROBLEM'
+    | 'ORDERING_PROBLEM'
+    | 'OPEN_ANSWER_PROBLEM';
+
+export type ToleranceKind = 'ABSOLUTE' | 'RELATIVE';
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
 export type Visibility = 'PRIVATE' | 'PUBLIC';
 
@@ -6,7 +15,14 @@ export const PROBLEM_TYPE_LABELS: Record<ProblemType, string> = {
     CHOICE_PROBLEM: '🔘 Тест (с вариантами)',
     INPUT_PROBLEM: '⌨️ Точный ввод ответа',
     CODE_PROBLEM: '💻 Программирование',
+    NUMERIC_PROBLEM: '🔢 Числовой ответ',
+    MATCHING_PROBLEM: '🔗 Соответствие',
+    ORDERING_PROBLEM: '↕️ Упорядочивание',
+    OPEN_ANSWER_PROBLEM: '📝 Развёрнутый ответ',
 };
+
+/** Проверяет человек, а не платформа: решения ждут преподавателя. */
+export const MANUALLY_REVIEWED_TYPES: ProblemType[] = ['OPEN_ANSWER_PROBLEM'];
 
 export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
     EASY: 'Лёгкая',
@@ -43,6 +59,13 @@ export interface ProblemDto {
     correctOptionIndexes?: number[];
     isMultipleChoice?: boolean;
     correctAnswer?: string;
+    correctValue?: number;
+    tolerance?: number;
+    toleranceKind?: ToleranceKind;
+    leftItems?: string[];
+    rightItems?: string[];
+    orderedItems?: string[];
+    reviewGuidelines?: string;
     timeLimitSec?: number;
     memoryLimitMb?: number;
     allowedLanguages?: string;
@@ -65,6 +88,15 @@ export interface ProblemContent {
     correctOptionIndexes: number[];
     isMultipleChoice: boolean;
     correctAnswer: string;
+    correctValue: number | '';
+    tolerance: number;
+    toleranceKind: ToleranceKind;
+    /** Параллельные списки: leftItems[i] соответствует rightItems[i]. */
+    leftItems: string[];
+    rightItems: string[];
+    /** Элементы в правильном порядке — перемешивает их сервер. */
+    orderedItems: string[];
+    reviewGuidelines: string;
     timeLimitSec: number;
     memoryLimitMb: number;
     allowedLanguages: string;
@@ -83,6 +115,13 @@ export const emptyProblemContent = (): ProblemContent => ({
     correctOptionIndexes: [0],
     isMultipleChoice: false,
     correctAnswer: '',
+    correctValue: '',
+    tolerance: 0,
+    toleranceKind: 'ABSOLUTE',
+    leftItems: ['Слева 1', 'Слева 2'],
+    rightItems: ['Справа 1', 'Справа 2'],
+    orderedItems: ['Первый', 'Второй', 'Третий'],
+    reviewGuidelines: '',
     timeLimitSec: 2,
     memoryLimitMb: 256,
     allowedLanguages: 'Java, Python, C++',
@@ -102,6 +141,13 @@ interface ProblemContentSource {
     correctOptionIndexes?: number[];
     isMultipleChoice?: boolean;
     correctAnswer?: string;
+    correctValue?: number;
+    tolerance?: number;
+    toleranceKind?: ToleranceKind;
+    leftItems?: string[];
+    rightItems?: string[];
+    orderedItems?: string[];
+    reviewGuidelines?: string;
     timeLimitSec?: number;
     memoryLimitMb?: number;
     allowedLanguages?: string;
@@ -125,6 +171,14 @@ export const problemContentFrom = (source: ProblemContentSource): ProblemContent
                 : fallback.correctOptionIndexes,
         isMultipleChoice: source.isMultipleChoice ?? false,
         correctAnswer: source.correctAnswer ?? '',
+        correctValue: source.correctValue ?? '',
+        tolerance: source.tolerance ?? 0,
+        toleranceKind: source.toleranceKind ?? 'ABSOLUTE',
+        leftItems: source.leftItems && source.leftItems.length > 0 ? source.leftItems : fallback.leftItems,
+        rightItems: source.rightItems && source.rightItems.length > 0 ? source.rightItems : fallback.rightItems,
+        orderedItems:
+            source.orderedItems && source.orderedItems.length > 0 ? source.orderedItems : fallback.orderedItems,
+        reviewGuidelines: source.reviewGuidelines ?? '',
         timeLimitSec: source.timeLimitSec ?? fallback.timeLimitSec,
         memoryLimitMb: source.memoryLimitMb ?? fallback.memoryLimitMb,
         allowedLanguages: source.allowedLanguages ?? fallback.allowedLanguages,
@@ -156,6 +210,21 @@ export const problemContentPayload = (type: ProblemType, content: ProblemContent
         payload.options = content.options;
         payload.correctOptionIndexes = content.correctOptionIndexes;
         payload.isMultipleChoice = content.isMultipleChoice;
+    }
+    if (type === 'NUMERIC_PROBLEM') {
+        payload.correctValue = content.correctValue === '' ? null : Number(content.correctValue);
+        payload.tolerance = content.tolerance;
+        payload.toleranceKind = content.toleranceKind;
+    }
+    if (type === 'MATCHING_PROBLEM') {
+        payload.leftItems = content.leftItems;
+        payload.rightItems = content.rightItems;
+    }
+    if (type === 'ORDERING_PROBLEM') {
+        payload.orderedItems = content.orderedItems;
+    }
+    if (type === 'OPEN_ANSWER_PROBLEM') {
+        payload.reviewGuidelines = content.reviewGuidelines;
     }
     if (type === 'CODE_PROBLEM') {
         payload.timeLimitSec = content.timeLimitSec;

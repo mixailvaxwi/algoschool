@@ -5,10 +5,7 @@ import com.algoschool.exception.AppException;
 import com.algoschool.course.dto.player.*;
 import com.algoschool.course.entity.Lesson;
 import com.algoschool.course.repository.LessonRepository;
-import com.algoschool.problem.entity.ChoiceProblem;
-import com.algoschool.problem.entity.CodeProblem;
-import com.algoschool.problem.entity.Problem;
-import com.algoschool.problem.entity.TextProblem;
+import com.algoschool.problem.entity.*;
 import com.algoschool.step.entity.ProblemStep;
 import com.algoschool.step.entity.Step;
 import com.algoschool.step.entity.TheoryStep;
@@ -114,6 +111,44 @@ public class StudentLessonService {
             dto.setDescription(choice.getDescription());
             dto.setOptions(choice.getOptions());
             dto.setIsMultipleChoice(choice.isMultipleChoice());
+            return dto;
+        }
+        if (problem instanceof NumericProblem numeric) {
+            NumericProblemPlayerDto dto = new NumericProblemPlayerDto();
+            dto.setId(step.getId());
+            dto.setOrderIndex(step.getOrderIndex());
+            dto.setDescription(numeric.getDescription());
+            // Допуск показываем: не зная требуемой точности, студент не
+            // понимает, до скольких знаков округлять. Эталон, конечно, нет.
+            dto.setTolerance(numeric.getTolerance());
+            dto.setToleranceKind(numeric.getToleranceKind().name());
+            return dto;
+        }
+        if (problem instanceof MatchingProblem matching) {
+            MatchingProblemPlayerDto dto = new MatchingProblemPlayerDto();
+            dto.setId(step.getId());
+            dto.setOrderIndex(step.getOrderIndex());
+            dto.setDescription(matching.getDescription());
+            dto.setLeftItems(matching.getLeftItems());
+            // Перемешанная правая колонка: в порядке хранения i-й правый
+            // элемент подходит к i-му левому, то есть это готовый ответ.
+            dto.setRightItems(matching.rightItemsForDisplay());
+            return dto;
+        }
+        if (problem instanceof OrderingProblem ordering) {
+            OrderingProblemPlayerDto dto = new OrderingProblemPlayerDto();
+            dto.setId(step.getId());
+            dto.setOrderIndex(step.getOrderIndex());
+            dto.setDescription(ordering.getDescription());
+            // Элементы хранятся в правильном порядке — показываем перемешанными.
+            dto.setItems(ordering.itemsForDisplay());
+            return dto;
+        }
+        if (problem instanceof OpenAnswerProblem open) {
+            OpenAnswerProblemPlayerDto dto = new OpenAnswerProblemPlayerDto();
+            dto.setId(step.getId());
+            dto.setOrderIndex(step.getOrderIndex());
+            dto.setDescription(open.getDescription());
             return dto;
         }
         throw new IllegalArgumentException("Неизвестный тип задачи: " + problem.getClass().getSimpleName());

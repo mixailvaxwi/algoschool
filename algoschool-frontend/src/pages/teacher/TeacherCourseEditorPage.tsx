@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Folder, FileText, X, Save, Pencil, Trash2, ListTree, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Plus, Folder, FileText, X, Save, Pencil, Trash2, ListTree, ClipboardList, ClipboardCheck } from 'lucide-react';
 import { apiClient } from '../../api/axios';
 
 // Типы, соответствующие нашему CourseStructureResponse с бэкенда
@@ -185,6 +185,13 @@ export const TeacherCourseEditorPage = () => {
                     <p className="text-slate-500 text-sm">Управление модулями и уроками</p>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
+                    <button
+                        onClick={() => navigate(`/teacher/courses/${courseId}/review`)}
+                        className="flex items-center gap-2 border border-slate-200 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                        <ClipboardCheck size={20} />
+                        Очередь проверки
+                    </button>
                     <button
                         onClick={() => navigate(`/teacher/courses/${courseId}/gradebook`)}
                         className="flex items-center gap-2 border border-slate-200 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium transition-colors"

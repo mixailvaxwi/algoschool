@@ -12,4 +12,8 @@ public class AssessmentResult {
     private String message;
     private String compilerOutput;
     private String testResultsJson;
+
+    /** Балл за эту попытку; null — проверка ещё не закончена. */
+    private Integer score;
+    private Integer maxScore;
 }

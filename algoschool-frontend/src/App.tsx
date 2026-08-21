@@ -14,6 +14,7 @@ import { TeacherCoursesPage } from './pages/teacher/TeacherCoursesPage';
 import { TeacherCourseEditorPage } from './pages/teacher/TeacherCourseEditorPage';
 import { TeacherProblemsPage } from './pages/teacher/TeacherProblemsPage';
 import { GradebookPage } from './pages/teacher/GradebookPage';
+import { ReviewQueuePage } from './pages/teacher/ReviewQueuePage';
 import { LessonEditorPage } from './pages/teacher/LessonEditorPage';
 import { LessonPlayerPage } from './pages/student/LessonPlayerPage';
 import { MyGradesPage } from './pages/student/MyGradesPage';
@@ -46,6 +47,7 @@ function App() {
                         <Route path="courses/:courseId/lessons/:lessonId/edit" element={<LessonEditorPage />} />
                         <Route path="courses/:courseId/applications" element={<TeacherApplicationsPage />} />
                         <Route path="courses/:courseId/gradebook" element={<GradebookPage />} />
+                        <Route path="courses/:courseId/review" element={<ReviewQueuePage />} />
                         <Route path="problems" element={<TeacherProblemsPage />} />
                         <Route path="submissions" element={<TeacherSubmissionsPage />} />
                         <Route path="users" element={<div>Страница пользователей (в разработке)</div>} />

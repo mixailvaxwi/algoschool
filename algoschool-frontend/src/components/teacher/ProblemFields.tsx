@@ -5,6 +5,7 @@ import {
     type Difficulty,
     type ProblemContent,
     type ProblemType,
+    type ToleranceKind,
     type Visibility,
 } from '../../types/problem';
 
@@ -72,6 +73,11 @@ export const ProblemFields = ({ type, value, onChange, disabled = false }: Props
                     : value.correctOptionIndexes,
         });
     };
+
+    const replaceAt = (list: string[], index: number, text: string) =>
+        list.map((item, i) => (i === index ? text : item));
+
+    const removeAt = (list: string[], index: number) => list.filter((_, i) => i !== index);
 
     const inputClass =
         'w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-500';
@@ -231,6 +237,168 @@ export const ProblemFields = ({ type, value, onChange, disabled = false }: Props
                     >
                         <Plus size={16} /> Добавить вариант
                     </button>
+                </div>
+            )}
+
+            {type === 'NUMERIC_PROBLEM' && (
+                <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Правильное значение</label>
+                        <input
+                            type="number"
+                            step="any"
+                            value={value.correctValue}
+                            disabled={disabled}
+                            onChange={(e) => patch({ correctValue: e.target.value === '' ? '' : Number(e.target.value) })}
+                            placeholder="Например: 3.14"
+                            className={`${inputClass} font-mono bg-white`}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Допуск</label>
+                        <input
+                            type="number"
+                            step="any"
+                            min={0}
+                            value={value.tolerance}
+                            disabled={disabled}
+                            onChange={(e) => patch({ tolerance: Math.max(0, Number(e.target.value)) })}
+                            className={`${inputClass} font-mono bg-white`}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Вид допуска</label>
+                        <select
+                            value={value.toleranceKind}
+                            disabled={disabled}
+                            onChange={(e) => patch({ toleranceKind: e.target.value as ToleranceKind })}
+                            className={`${inputClass} bg-white`}
+                        >
+                            <option value="ABSOLUTE">Абсолютный (±)</option>
+                            <option value="RELATIVE">Относительный (доля)</option>
+                        </select>
+                    </div>
+                    <p className="col-span-3 text-sm text-slate-500">
+                        Нулевой допуск — точное совпадение. Относительный считается от модуля правильного
+                        значения: 0.01 — это один процент. Допуск виден студенту, само значение — нет.
+                    </p>
+                </div>
+            )}
+
+            {type === 'MATCHING_PROBLEM' && (
+                <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Пары соответствия</label>
+                    <p className="text-sm text-slate-500 mb-4">
+                        Вводите готовыми парами: что слева — тому и соответствует то, что справа. Студенту
+                        правая колонка показывается перемешанной.
+                    </p>
+                    <div className="space-y-3">
+                        {value.leftItems.map((left, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={left}
+                                    disabled={disabled}
+                                    onChange={(e) => patch({ leftItems: replaceAt(value.leftItems, index, e.target.value) })}
+                                    placeholder={`Слева ${index + 1}`}
+                                    className={`${inputClass} bg-white`}
+                                />
+                                <span className="text-slate-400 shrink-0">→</span>
+                                <input
+                                    type="text"
+                                    value={value.rightItems[index] ?? ''}
+                                    disabled={disabled}
+                                    onChange={(e) => patch({ rightItems: replaceAt(value.rightItems, index, e.target.value) })}
+                                    placeholder={`Справа ${index + 1}`}
+                                    className={`${inputClass} bg-white`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        patch({
+                                            leftItems: removeAt(value.leftItems, index),
+                                            rightItems: removeAt(value.rightItems, index),
+                                        })
+                                    }
+                                    disabled={disabled || value.leftItems.length <= 2}
+                                    className="p-2 text-slate-400 hover:text-red-500 disabled:opacity-30 transition-colors shrink-0"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            patch({
+                                leftItems: [...value.leftItems, `Слева ${value.leftItems.length + 1}`],
+                                rightItems: [...value.rightItems, `Справа ${value.rightItems.length + 1}`],
+                            })
+                        }
+                        disabled={disabled}
+                        className="mt-4 flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-40 transition-colors"
+                    >
+                        <Plus size={16} /> Добавить пару
+                    </button>
+                </div>
+            )}
+
+            {type === 'ORDERING_PROBLEM' && (
+                <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Элементы в правильном порядке</label>
+                    <p className="text-sm text-slate-500 mb-4">
+                        Вводите так, как должно быть. Студенту элементы показываются перемешанными, и балл
+                        считается по доле элементов, оказавшихся на своих местах.
+                    </p>
+                    <div className="space-y-3">
+                        {value.orderedItems.map((item, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                <span className="w-7 shrink-0 text-center font-mono text-slate-400">{index + 1}</span>
+                                <input
+                                    type="text"
+                                    value={item}
+                                    disabled={disabled}
+                                    onChange={(e) => patch({ orderedItems: replaceAt(value.orderedItems, index, e.target.value) })}
+                                    placeholder={`Элемент ${index + 1}`}
+                                    className={`${inputClass} bg-white`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => patch({ orderedItems: removeAt(value.orderedItems, index) })}
+                                    disabled={disabled || value.orderedItems.length <= 2}
+                                    className="p-2 text-slate-400 hover:text-red-500 disabled:opacity-30 transition-colors shrink-0"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => patch({ orderedItems: [...value.orderedItems, `Элемент ${value.orderedItems.length + 1}`] })}
+                        disabled={disabled}
+                        className="mt-4 flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-40 transition-colors"
+                    >
+                        <Plus size={16} /> Добавить элемент
+                    </button>
+                </div>
+            )}
+
+            {type === 'OPEN_ANSWER_PROBLEM' && (
+                <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Критерии проверки</label>
+                    <textarea
+                        value={value.reviewGuidelines}
+                        disabled={disabled}
+                        onChange={(e) => patch({ reviewGuidelines: e.target.value })}
+                        placeholder="За что ставить полный балл, за что частичный — подсказка проверяющему"
+                        className="w-full h-32 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 resize-y bg-white disabled:bg-slate-100 disabled:text-slate-500"
+                    />
+                    <p className="text-sm text-slate-500 mt-2">
+                        Критерии видит только проверяющий. Ответы на такие задачи платформа не проверяет —
+                        они попадают в очередь проверки, а балл ставит преподаватель.
+                    </p>
                 </div>
             )}
 

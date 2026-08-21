@@ -4,11 +4,14 @@ import com.algoschool.exception.AppException;
 import com.algoschool.problem.dto.ProblemDto;
 import com.algoschool.problem.dto.ProblemRequest;
 import com.algoschool.problem.entity.*;
+import com.algoschool.step.dto.StepCreateRequest;
 import org.springframework.stereotype.Component;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -23,6 +26,50 @@ import java.util.Set;
 public class ProblemContentMapper {
 
     private static final int MAX_TITLE_LENGTH = 200;
+
+    private static final Random RANDOM = new SecureRandom();
+
+    /**
+     * Собирает запрос к банку из формы шага урока.
+     * <p>
+     * Механическое копирование поле в поле, и потому оно здесь, а не в
+     * StepServiceImpl: полей содержания уже больше двадцати, и забытое поле не
+     * ломает сборку — оно молча приезжает пустым. Так уже случилось однажды с
+     * числовым ответом, поэтому список полей закреплён тестом.
+     */
+    public ProblemRequest fromStepRequest(StepCreateRequest step, ProblemType type) {
+        ProblemRequest request = new ProblemRequest();
+        request.setProblemType(type.name());
+        request.setTitle(requireTitle(step.getTitle(), step.getDescription()));
+        request.setDescription(step.getDescription());
+        request.setDifficulty(step.getDifficulty());
+        request.setVisibility(step.getVisibility());
+        request.setMaxScore(step.getMaxScore());
+        request.setTags(step.getTags());
+
+        request.setOptions(step.getOptions());
+        request.setCorrectOptionIndexes(step.getCorrectOptionIndexes());
+        request.setIsMultipleChoice(step.getIsMultipleChoice());
+
+        request.setCorrectAnswer(step.getCorrectAnswer());
+
+        request.setCorrectValue(step.getCorrectValue());
+        request.setTolerance(step.getTolerance());
+        request.setToleranceKind(step.getToleranceKind());
+
+        request.setLeftItems(step.getLeftItems());
+        request.setRightItems(step.getRightItems());
+        request.setOrderedItems(step.getOrderedItems());
+        request.setReviewGuidelines(step.getReviewGuidelines());
+
+        request.setTimeLimitSec(step.getTimeLimitSec());
+        request.setMemoryLimitMb(step.getMemoryLimitMb());
+        request.setAllowedLanguages(step.getAllowedLanguages());
+        request.setEjudgeContestId(step.getEjudgeContestId());
+        request.setEjudgeProblemId(step.getEjudgeProblemId());
+
+        return request;
+    }
 
     // --- Запрос -> сущность -----------------------------------------------
 
@@ -44,7 +91,92 @@ public class ProblemContentMapper {
             applyText(text, request);
         } else if (problem instanceof CodeProblem code) {
             applyCode(code, request);
+        } else if (problem instanceof NumericProblem numeric) {
+            applyNumeric(numeric, request);
+        } else if (problem instanceof MatchingProblem matching) {
+            applyMatching(matching, request);
+        } else if (problem instanceof OrderingProblem ordering) {
+            applyOrdering(ordering, request);
+        } else if (problem instanceof OpenAnswerProblem open) {
+            open.setReviewGuidelines(request.getReviewGuidelines());
         }
+    }
+
+    private void applyNumeric(NumericProblem numeric, ProblemRequest request) {
+        if (request.getCorrectValue() == null || !Double.isFinite(request.getCorrectValue())) {
+            throw AppException.badRequest("Укажите правильное числовое значение");
+        }
+        double tolerance = request.getTolerance() == null ? 0.0 : request.getTolerance();
+        if (tolerance < 0 || !Double.isFinite(tolerance)) {
+            throw AppException.badRequest("Допуск не может быть отрицательным");
+        }
+
+        numeric.setCorrectValue(request.getCorrectValue());
+        numeric.setTolerance(tolerance);
+        numeric.setToleranceKind(ToleranceKind.parse(request.getToleranceKind()));
+    }
+
+    private void applyMatching(MatchingProblem matching, ProblemRequest request) {
+        List<String> left = request.getLeftItems() == null ? List.of() : request.getLeftItems();
+        List<String> right = request.getRightItems() == null ? List.of() : request.getRightItems();
+
+        if (left.size() != right.size()) {
+            throw AppException.badRequest("Левая и правая колонки должны быть одной длины");
+        }
+        if (left.size() < 2) {
+            throw AppException.badRequest("Нужно как минимум две пары");
+        }
+        requireNoBlanks(left, "Пустой элемент левой колонки: заполните или удалите строку");
+        requireNoBlanks(right, "Пустой элемент правой колонки: заполните или удалите строку");
+
+        matching.setLeftItems(new ArrayList<>(left));
+        matching.setRightItems(new ArrayList<>(right));
+        matching.setRightDisplayOrder(shuffledOrder(right.size()));
+    }
+
+    private void applyOrdering(OrderingProblem ordering, ProblemRequest request) {
+        List<String> items = request.getOrderedItems() == null ? List.of() : request.getOrderedItems();
+        if (items.size() < 2) {
+            throw AppException.badRequest("Нужно как минимум два элемента для упорядочивания");
+        }
+        requireNoBlanks(items, "Пустой элемент: заполните или удалите строку");
+
+        ordering.setItems(new ArrayList<>(items));
+        ordering.setDisplayOrder(shuffledOrder(items.size()));
+    }
+
+    private void requireNoBlanks(List<String> values, String message) {
+        if (values.stream().anyMatch(value -> value == null || value.isBlank())) {
+            throw AppException.badRequest(message);
+        }
+    }
+
+    /**
+     * Перестановка для показа студенту.
+     * <p>
+     * Автор вводит содержание в правильном виде — так удобнее и ему, и правке.
+     * Наружу оно отдаётся перемешанным, иначе ответ читался бы прямо из выдачи
+     * API. Тождественная перестановка отбрасывается: она не перемешивает
+     * ничего, а вероятность её выпадения на трёх элементах — каждый шестой раз.
+     */
+    private List<Integer> shuffledOrder(int size) {
+        List<Integer> order = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            order.add(i);
+        }
+        if (size < 2) {
+            return order;
+        }
+
+        java.util.Collections.shuffle(order, RANDOM);
+        boolean identity = true;
+        for (int i = 0; i < size && identity; i++) {
+            identity = order.get(i) == i;
+        }
+        if (identity) {
+            java.util.Collections.rotate(order, 1);
+        }
+        return order;
     }
 
     private void applyChoice(ChoiceProblem choice, ProblemRequest request) {
@@ -132,6 +264,29 @@ public class ProblemContentMapper {
                     .allowedLanguages(code.getAllowedLanguages())
                     .ejudgeContestId(code.getEjudgeContestId())
                     .ejudgeProblemId(code.getEjudgeProblemId());
+        } else if (problem instanceof NumericProblem numeric) {
+            dto.tolerance(numeric.getTolerance())
+                    .toleranceKind(numeric.getToleranceKind().name());
+            if (withAnswers) {
+                dto.correctValue(numeric.getCorrectValue());
+            }
+        } else if (problem instanceof MatchingProblem matching) {
+            dto.leftItems(List.copyOf(matching.getLeftItems()));
+            if (withAnswers) {
+                // Правая колонка в порядке хранения — это и есть ответ:
+                // i-й правый элемент подходит к i-му левому.
+                dto.rightItems(List.copyOf(matching.getRightItems()));
+            }
+        } else if (problem instanceof OrderingProblem ordering) {
+            if (withAnswers) {
+                // Элементы хранятся в правильном порядке, поэтому сам список
+                // и есть ответ.
+                dto.orderedItems(List.copyOf(ordering.getItems()));
+            }
+        } else if (problem instanceof OpenAnswerProblem open) {
+            if (withAnswers) {
+                dto.reviewGuidelines(open.getReviewGuidelines());
+            }
         }
 
         return dto.build();

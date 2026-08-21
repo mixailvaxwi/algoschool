@@ -71,4 +71,18 @@ public class Submission {
 
     @Column(name = "test_results_json", columnDefinition = "TEXT")
     private String testResultsJson;
+
+    // --- След ручной проверки (UC-T-40, UC-T-41) --------------------------
+
+    /** Кто проверил развёрнутый ответ. Null у автоматически проверенных решений. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reviewed_by")
+    private User reviewedBy;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    /** Что проверяющий написал студенту. Виден студенту в истории попыток. */
+    @Column(name = "review_comment", columnDefinition = "TEXT")
+    private String reviewComment;
 }

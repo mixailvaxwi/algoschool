@@ -1,7 +1,6 @@
 package com.algoschool.submission.checker;
 
 import com.algoschool.problem.entity.Problem;
-import com.algoschool.submission.entity.SubmissionStatus;
 
 /**
  * Проверяющий модуль конкретного типа задачи.
@@ -12,6 +11,6 @@ import com.algoschool.submission.entity.SubmissionStatus;
 public interface ProblemChecker {
     boolean supports(Problem problem);
 
-    /** Конкретный статус вместо true/false: PENDING — тоже нормальный исход. */
-    SubmissionStatus check(Problem problem, String payload);
+    /** Вердикт и балл: не всякий ответ бывает только верным или только неверным. */
+    CheckResult check(Problem problem, String payload);
 }

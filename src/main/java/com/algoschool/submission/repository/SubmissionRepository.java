@@ -38,6 +38,22 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long>, J
             + "AND s.score IS NOT NULL ORDER BY s.createdAt ASC, s.id ASC")
     List<Submission> findScoredAttempts(@Param("userId") Long userId, @Param("problemId") Long problemId);
 
+    /**
+     * Очередь ручной проверки курса, от самых старых ответов к свежим.
+     * <p>
+     * Решения со снятым размещением (step IS NULL) сюда не попадают: курс,
+     * к которому они относились, эту задачу больше не содержит.
+     * <p>
+     * JOIN FETCH обязателен: Problem — абстрактный корень JOINED-иерархии, и
+     * ленивая ссылка отдала бы прокси базового типа. Проверка
+     * {@code instanceof OpenAnswerProblem} на нём возвращает false, и критерии
+     * проверки молча уезжали бы в очередь пустыми.
+     */
+    @Query("SELECT s FROM Submission s JOIN FETCH s.problem "
+            + "WHERE s.status = com.algoschool.submission.entity.SubmissionStatus.PENDING_REVIEW "
+            + "AND s.step.lesson.module.course.id = :courseId ORDER BY s.createdAt ASC, s.id ASC")
+    List<Submission> findForReview(@Param("courseId") Long courseId);
+
     /** То же для многих задач разом — пересчёт целого курса при зачислении. */
     @Query("SELECT s FROM Submission s WHERE s.user.id = :userId AND s.problem.id IN :problemIds "
             + "AND s.score IS NOT NULL ORDER BY s.createdAt ASC, s.id ASC")

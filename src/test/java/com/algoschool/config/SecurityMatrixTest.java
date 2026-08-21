@@ -6,6 +6,8 @@ import com.algoschool.auth.service.JwtService;
 import com.algoschool.course.controller.StudentCourseController;
 import com.algoschool.course.controller.TeacherCourseController;
 import com.algoschool.grade.controller.StudentGradeController;
+import com.algoschool.submission.controller.TeacherReviewController;
+import com.algoschool.submission.service.ReviewService;
 import com.algoschool.grade.controller.TeacherGradebookController;
 import com.algoschool.grade.service.GradeService;
 import com.algoschool.problem.controller.TeacherProblemController;
@@ -45,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(controllers = {TeacherCourseController.class, StudentCourseController.class, UserController.class,
         AdminUserController.class, TeacherProblemController.class,
-        TeacherGradebookController.class, StudentGradeController.class})
+        TeacherGradebookController.class, StudentGradeController.class, TeacherReviewController.class})
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, SecurityErrorWriter.class,
         RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class, GlobalExceptionHandler.class})
 class SecurityMatrixTest {
@@ -61,6 +63,7 @@ class SecurityMatrixTest {
     @MockitoBean private AdminUserService adminUserService;
     @MockitoBean private ProblemService problemService;
     @MockitoBean private GradeService gradeService;
+    @MockitoBean private ReviewService reviewService;
 
     // --- Публичная витрина -------------------------------------------------
 
@@ -167,6 +170,34 @@ class SecurityMatrixTest {
     @WithAnonymousUser
     void anonymousGetsUnauthorizedOnOwnGrades() throws Exception {
         mvc.perform(get("/api/courses/1/my-grades")).andExpect(status().isUnauthorized());
+    }
+
+    // --- Очередь ручной проверки ---------------------------------------------
+
+    /**
+     * Развёрнутый ответ видит только проверяющий (§7): студенческий токен до
+     * очереди не достаёт.
+     */
+    @Test
+    @WithMockUser(username = "student1", roles = "STUDENT")
+    void studentIsForbiddenFromReviewQueue() throws Exception {
+        mvc.perform(get("/api/teacher/review-queue").param("courseId", "1"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "teacher1", roles = "TEACHER")
+    void teacherReachesReviewQueue() throws Exception {
+        when(reviewService.queue(any(), anyString())).thenReturn(List.of());
+        mvc.perform(get("/api/teacher/review-queue").param("courseId", "1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void anonymousGetsUnauthorizedOnReviewQueue() throws Exception {
+        mvc.perform(get("/api/teacher/review-queue").param("courseId", "1"))
+                .andExpect(status().isUnauthorized());
     }
 
     // --- Личные данные ------------------------------------------------------

@@ -2,7 +2,6 @@ package com.algoschool.submission.checker;
 
 import com.algoschool.problem.entity.ChoiceProblem;
 import com.algoschool.problem.entity.Problem;
-import com.algoschool.submission.entity.SubmissionStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
@@ -17,12 +16,16 @@ public class ChoiceProblemChecker implements ProblemChecker {
     }
 
     @Override
-    public SubmissionStatus check(Problem problem, String payload) {
+    public CheckResult check(Problem problem, String payload) {
         ChoiceProblem choice = (ChoiceProblem) problem;
 
         // Ответ — либо один индекс ("2"), либо несколько через запятую ("0,2")
         // для isMultipleChoice. Зачёт — только полное совпадение множеств:
         // отметить лишний вариант или пропустить один из верных — неверный ответ.
+        //
+        // Частичного балла здесь намеренно нет, в отличие от соответствия и
+        // упорядочивания: там неверный ответ стоит студенту вариантов, а тут
+        // стратегия «отметить всё» приносила бы очки за незнание.
         Set<Integer> studentAnswer;
         try {
             studentAnswer = Stream.of(payload.split(","))
@@ -31,12 +34,12 @@ public class ChoiceProblemChecker implements ProblemChecker {
                     .map(Integer::parseInt)
                     .collect(Collectors.toSet());
         } catch (NumberFormatException e) {
-            return SubmissionStatus.WRONG_ANSWER;
+            return CheckResult.wrong();
         }
 
         boolean isCorrect = !studentAnswer.isEmpty()
                 && studentAnswer.equals(choice.getCorrectOptionIndexes());
 
-        return isCorrect ? SubmissionStatus.CORRECT : SubmissionStatus.WRONG_ANSWER;
+        return isCorrect ? CheckResult.correct(choice.getMaxScore()) : CheckResult.wrong();
     }
 }

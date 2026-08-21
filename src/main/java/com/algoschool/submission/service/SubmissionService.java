@@ -14,6 +14,7 @@ import com.algoschool.step.entity.ProblemStep;
 import com.algoschool.step.entity.Step;
 import com.algoschool.step.repository.ProblemStepRepository;
 import com.algoschool.step.repository.StepRepository;
+import com.algoschool.submission.checker.CheckResult;
 import com.algoschool.submission.checker.ProblemChecker;
 import com.algoschool.submission.dto.AssessmentResult;
 import com.algoschool.submission.dto.PendingRun;
@@ -78,7 +79,8 @@ public class SubmissionService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Нет чекера для типа задачи " + problem.getClass().getSimpleName()));
 
-        SubmissionStatus status = activeChecker.check(problem, request.getPayload());
+        CheckResult check = activeChecker.check(problem, request.getPayload());
+        SubmissionStatus status = check.status();
 
         Submission submission = Submission.builder()
                 .user(user)
@@ -87,7 +89,7 @@ public class SubmissionService {
                 .payload(request.getPayload())
                 .status(status)
                 .maxScore(problem.getMaxScore())
-                .score(scoreFor(status, problem))
+                .score(check.score())
                 .build();
 
         if (problem instanceof CodeProblem codeProblem) {
@@ -136,6 +138,8 @@ public class SubmissionService {
                 .message(message)
                 .compilerOutput(submission.getCompilerOutput())
                 .testResultsJson(submission.getTestResultsJson())
+                .score(submission.getScore())
+                .maxScore(submission.getMaxScore())
                 .build();
     }
 
@@ -176,7 +180,7 @@ public class SubmissionService {
         }
 
         sub.setStatus(mapped);
-        sub.setScore(scoreFor(mapped, sub.getProblem()));
+        sub.setScore(verdictScore(mapped, sub.getProblem()));
         if (sub.getMaxScore() == null) {
             sub.setMaxScore(sub.getProblem().getMaxScore());
         }
@@ -200,20 +204,17 @@ public class SubmissionService {
     }
 
     /**
-     * Балл за попытку по вердикту.
-     * <p>
-     * Пока оценка бинарная: вес задачи целиком или ноль. Частичный балл за
-     * подзадачу появится вместе с типами задач, которые его допускают, — здесь
-     * важно, что балл уже хранится у отправки, а не выводится из вердикта на лету.
+     * Балл по вердикту Ejudge: у кода частичного результата нет — задача либо
+     * прошла все тесты, либо нет.
      * <p>
      * null для PENDING и SUBMISSION_FAILED: в первом случае проверка не
      * закончена, во втором лежал Ejudge — это не вердикт по ответу студента и
      * в зачёт идти не должно.
      */
-    private Integer scoreFor(SubmissionStatus status, Problem problem) {
+    private Integer verdictScore(SubmissionStatus status, Problem problem) {
         return switch (status) {
             case CORRECT -> problem.getMaxScore();
-            case PENDING, SUBMISSION_FAILED -> null;
+            case PENDING, PENDING_REVIEW, SUBMISSION_FAILED -> null;
             default -> 0;
         };
     }
@@ -223,11 +224,23 @@ public class SubmissionService {
         return switch (status) {
             case CORRECT -> "Отличное решение! Вы справились.";
             case WRONG_ANSWER -> "Ответ неверный. Попробуйте еще раз.";
+            case PARTIALLY_CORRECT -> "Часть ответа верна — можно попробовать ещё раз.";
             case PENDING -> "Решение отправлено на проверку (может занять некоторое время).";
+            case PENDING_REVIEW -> "Ответ отправлен преподавателю на проверку.";
             case COMPILATION_ERROR -> "Ошибка компиляции кода.";
             case SUBMISSION_FAILED -> "Проверяющая система недоступна. Решение сохранено, попробуйте отправить его позже.";
             default -> "Произошла ошибка при выполнении.";
         };
+    }
+
+    /**
+     * Отмечает прогресс после ручной проверки: балл выставил человек, но
+     * «пройдено» должно значить то же самое, что при автоматической проверке.
+     */
+    @Transactional
+    public void markSolvedAfterReview(Submission submission) {
+        updateUserProgress(submission.getUser(), submission.getProblem(),
+                submission.getStep(), submission.getPayload());
     }
 
     /**
@@ -294,7 +307,11 @@ public class SubmissionService {
                         sub.getStatus(),
                         sub.getCreatedAt(),
                         sub.getCompilerOutput(),
-                        sub.getTestResultsJson()))
+                        sub.getTestResultsJson(),
+                        sub.getScore(),
+                        sub.getMaxScore(),
+                        sub.getReviewComment(),
+                        sub.getReviewedBy() == null ? null : displayName(sub.getReviewedBy())))
                 .toList();
     }
 
@@ -338,6 +355,10 @@ public class SubmissionService {
                         sub.getStatus(),
                         sub.getCreatedAt()
                 )).toList();
+    }
+
+    private String displayName(User user) {
+        return user.getName() == null || user.getName().isBlank() ? user.getUsername() : user.getName();
     }
 
     private ProblemStep requireProblemStep(Long stepId) {

@@ -6,6 +6,7 @@ import com.algoschool.course.repository.LessonRepository;
 import com.algoschool.course.service.CourseAccessService;
 import com.algoschool.exception.AppException;
 import com.algoschool.grade.service.GradeService;
+import com.algoschool.problem.dto.ProblemDto;
 import com.algoschool.problem.dto.ProblemRequest;
 import com.algoschool.problem.entity.*;
 import com.algoschool.problem.service.ProblemContentMapper;
@@ -167,7 +168,7 @@ public class StepServiceImpl implements StepService {
         } else {
             // Форма редактора урока не знает про банк — задача заводится попутно
             // и достаётся автору курса.
-            problem = problemService.createEntity(toProblemRequest(request, type), course.getAuthor());
+            problem = problemService.createEntity(problemMapper.fromStepRequest(request, type), course.getAuthor());
         }
 
         ProblemStep step = new ProblemStep();
@@ -201,28 +202,7 @@ public class StepServiceImpl implements StepService {
                             + "Можно поменять только позицию шага в уроке.");
         }
 
-        problemMapper.apply(problem, toProblemRequest(request, ProblemType.of(problem)));
-    }
-
-    private ProblemRequest toProblemRequest(StepCreateRequest request, ProblemType type) {
-        ProblemRequest problemRequest = new ProblemRequest();
-        problemRequest.setProblemType(type.name());
-        problemRequest.setTitle(problemMapper.requireTitle(request.getTitle(), request.getDescription()));
-        problemRequest.setDescription(request.getDescription());
-        problemRequest.setDifficulty(request.getDifficulty());
-        problemRequest.setVisibility(request.getVisibility());
-        problemRequest.setMaxScore(request.getMaxScore());
-        problemRequest.setTags(request.getTags());
-        problemRequest.setOptions(request.getOptions());
-        problemRequest.setCorrectOptionIndexes(request.getCorrectOptionIndexes());
-        problemRequest.setIsMultipleChoice(request.getIsMultipleChoice());
-        problemRequest.setCorrectAnswer(request.getCorrectAnswer());
-        problemRequest.setTimeLimitSec(request.getTimeLimitSec());
-        problemRequest.setMemoryLimitMb(request.getMemoryLimitMb());
-        problemRequest.setAllowedLanguages(request.getAllowedLanguages());
-        problemRequest.setEjudgeContestId(request.getEjudgeContestId());
-        problemRequest.setEjudgeProblemId(request.getEjudgeProblemId());
-        return problemRequest;
+        problemMapper.apply(problem, problemMapper.fromStepRequest(request, ProblemType.of(problem)));
     }
 
     // --- Внутреннее ---------------------------------------------------------
@@ -248,6 +228,12 @@ public class StepServiceImpl implements StepService {
         return toTeacherDto(step, username, Map.of());
     }
 
+    /**
+     * Содержание задачи вытаскивает ProblemContentMapper — тот же, что отдаёт
+     * карточку банка. Дублировать разбор подтипов здесь значило бы завести два
+     * места, которые обязаны знать про все семь типов задач и неизбежно
+     * разъедутся при добавлении восьмого.
+     */
     private StepTeacherDto toTeacherDto(Step step, String username, Map<Long, Long> knownUsage) {
         StepTeacherDto.StepTeacherDtoBuilder dto = StepTeacherDto.builder()
                 .id(step.getId())
@@ -260,39 +246,39 @@ public class StepServiceImpl implements StepService {
 
         Problem problem = ((ProblemStep) step).getProblem();
         boolean editable = isOwnedBy(problem, username);
-
-        dto.problemId(problem.getId())
-                .title(problem.getTitle())
-                .description(problem.getDescription())
-                .difficulty(problem.getDifficulty() == null ? null : problem.getDifficulty().name())
-                .visibility(problem.getVisibility().name())
-                .maxScore(problem.getMaxScore())
-                .tags(List.copyOf(problem.getTags()))
-                .problemEditable(editable)
-                .problemUsageCount(knownUsage.containsKey(problem.getId())
-                        ? knownUsage.get(problem.getId())
-                        : problemStepRepository.countByProblemId(problem.getId()));
+        long usageCount = knownUsage.containsKey(problem.getId())
+                ? knownUsage.get(problem.getId())
+                : problemStepRepository.countByProblemId(problem.getId());
 
         // Правильные ответы нужны форме редактирования, но показывать чужой
         // ответ незачем: править задачу всё равно нельзя.
-        if (problem instanceof ChoiceProblem choice) {
-            dto.options(List.copyOf(choice.getOptions()))
-                    .isMultipleChoice(choice.isMultipleChoice());
-            if (editable) {
-                dto.correctOptionIndexes(choice.getCorrectOptionIndexes().stream().sorted().toList());
-            }
-        } else if (problem instanceof TextProblem text) {
-            if (editable) {
-                dto.correctAnswer(text.getCorrectAnswer());
-            }
-        } else if (problem instanceof CodeProblem code) {
-            dto.timeLimitSec(code.getTimeLimit())
-                    .memoryLimitMb(code.getMemoryLimit())
-                    .allowedLanguages(code.getAllowedLanguages())
-                    .ejudgeContestId(code.getEjudgeContestId())
-                    .ejudgeProblemId(code.getEjudgeProblemId());
-        }
+        ProblemDto content = problemMapper.toDto(problem, usageCount, editable, editable);
 
-        return dto.build();
+        return dto.problemId(content.getId())
+                .title(content.getTitle())
+                .description(content.getDescription())
+                .difficulty(content.getDifficulty())
+                .visibility(content.getVisibility())
+                .maxScore(content.getMaxScore())
+                .tags(content.getTags())
+                .problemEditable(editable)
+                .problemUsageCount(usageCount)
+                .options(content.getOptions())
+                .correctOptionIndexes(content.getCorrectOptionIndexes())
+                .isMultipleChoice(content.getIsMultipleChoice())
+                .correctAnswer(content.getCorrectAnswer())
+                .correctValue(content.getCorrectValue())
+                .tolerance(content.getTolerance())
+                .toleranceKind(content.getToleranceKind())
+                .leftItems(content.getLeftItems())
+                .rightItems(content.getRightItems())
+                .orderedItems(content.getOrderedItems())
+                .reviewGuidelines(content.getReviewGuidelines())
+                .timeLimitSec(content.getTimeLimitSec())
+                .memoryLimitMb(content.getMemoryLimitMb())
+                .allowedLanguages(content.getAllowedLanguages())
+                .ejudgeContestId(content.getEjudgeContestId())
+                .ejudgeProblemId(content.getEjudgeProblemId())
+                .build();
     }
 }

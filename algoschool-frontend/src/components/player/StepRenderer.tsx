@@ -2,18 +2,35 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiClient } from '../../api/axios';
 import { useLessonStore } from '../../store/useLessonStore';
-import type { AnyStep, TheoryStep, CodeProblemStep, InputProblemStep, ChoiceProblemStep } from './playerTypes';
+import type {
+    AnyStep,
+    TheoryStep,
+    CodeProblemStep,
+    InputProblemStep,
+    ChoiceProblemStep,
+    NumericProblemStep,
+    MatchingProblemStep,
+    OrderingProblemStep,
+    OpenAnswerProblemStep,
+} from './playerTypes';
 
 import { TheoryStepDisplay } from './steps/TheoryStepDisplay';
 import { CodeStepDisplay } from './steps/CodeStepDisplay';
 import { InputStepDisplay } from './steps/InputStepDisplay';
 import { ChoiceStepDisplay } from './steps/ChoiceStepDisplay';
+import { NumericStepDisplay } from './steps/NumericStepDisplay';
+import { MatchingStepDisplay } from './steps/MatchingStepDisplay';
+import { OrderingStepDisplay } from './steps/OrderingStepDisplay';
+import { OpenAnswerStepDisplay } from './steps/OpenAnswerStepDisplay';
 // 1. ДОБАВЛЯЕМ ИМПОРТ ИСТОРИИ
 import { SubmissionHistory } from './SubmissionHistory';
 
 export interface AssessmentResult {
     status: string;
     message: string;
+    /** Балл за попытку; null, пока проверка не закончена. */
+    score?: number | null;
+    maxScore?: number | null;
 }
 
 interface StepRendererProps {
@@ -72,6 +89,14 @@ export const StepRenderer: React.FC<StepRendererProps> = ({ step }) => {
                 return <InputStepDisplay step={step as InputProblemStep} onSubmit={handleUniversalSubmit} isLoading={isLoading} />;
             case 'CHOICE_PROBLEM':
                 return <ChoiceStepDisplay step={step as ChoiceProblemStep} onSubmit={handleUniversalSubmit} isLoading={isLoading} />;
+            case 'NUMERIC_PROBLEM':
+                return <NumericStepDisplay step={step as NumericProblemStep} onSubmit={handleUniversalSubmit} isLoading={isLoading} />;
+            case 'MATCHING_PROBLEM':
+                return <MatchingStepDisplay step={step as MatchingProblemStep} onSubmit={handleUniversalSubmit} isLoading={isLoading} />;
+            case 'ORDERING_PROBLEM':
+                return <OrderingStepDisplay step={step as OrderingProblemStep} onSubmit={handleUniversalSubmit} isLoading={isLoading} />;
+            case 'OPEN_ANSWER_PROBLEM':
+                return <OpenAnswerStepDisplay step={step as OpenAnswerProblemStep} onSubmit={handleUniversalSubmit} isLoading={isLoading} />;
             default:
                 return <div className="p-8 text-red-500 bg-red-50 rounded-xl">Неизвестный тип шага: {(step as any).stepType}</div>;
         }

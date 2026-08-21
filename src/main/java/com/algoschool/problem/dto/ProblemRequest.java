@@ -46,6 +46,26 @@ public class ProblemRequest {
     // --- INPUT_PROBLEM ---
     private String correctAnswer;
 
+    // --- NUMERIC_PROBLEM ---
+    private Double correctValue;
+    private Double tolerance;
+    /** ABSOLUTE (по умолчанию) или RELATIVE. */
+    private String toleranceKind;
+
+    // --- MATCHING_PROBLEM ---
+    // Параллельные списки: leftItems[i] соответствует rightItems[i]. Автор
+    // вводит пары, перемешиванием занимается сервер.
+    private List<String> leftItems;
+    private List<String> rightItems;
+
+    // --- ORDERING_PROBLEM ---
+    /** Элементы в правильном порядке — в том, в каком их вводит автор. */
+    private List<String> orderedItems;
+
+    // --- OPEN_ANSWER_PROBLEM ---
+    /** Критерии для проверяющего; студенту не показываются. */
+    private String reviewGuidelines;
+
     // --- CODE_PROBLEM ---
     private Integer timeLimitSec;
     private Integer memoryLimitMb;

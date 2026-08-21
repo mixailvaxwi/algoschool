@@ -45,6 +45,21 @@ public class ProblemDto {
     // --- INPUT_PROBLEM ---
     private String correctAnswer;
 
+    // --- NUMERIC_PROBLEM ---
+    private Double correctValue;
+    private Double tolerance;
+    private String toleranceKind;
+
+    // --- MATCHING_PROBLEM ---
+    private List<String> leftItems;
+    private List<String> rightItems;
+
+    // --- ORDERING_PROBLEM ---
+    private List<String> orderedItems;
+
+    // --- OPEN_ANSWER_PROBLEM ---
+    private String reviewGuidelines;
+
     // --- CODE_PROBLEM ---
     private Integer timeLimitSec;
     private Integer memoryLimitMb;
